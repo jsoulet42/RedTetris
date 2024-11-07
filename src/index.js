@@ -1,16 +1,39 @@
+// ./src/index.js
 import React from "react";
-import ReactDOM from "react-dom/client";
+import ReactDOM from "react-dom";
 import App from "./App";
-import reportWebVitals from "./reportWebVitals";
+import { BrowserRouter } from "react-router-dom";
+import { Provider, useDispatch } from "react-redux";
+import store from "./redux/store";
+import socket from "./socket";
+import { updateGameState } from "./redux/actions/gameActions";
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+// Créer un composant pour gérer les connexions socket
+const SocketListener = ({ children }) => {
+  const dispatch = useDispatch();
+
+  React.useEffect(() => {
+    // Écouter l'événement 'gameState' depuis le serveur
+    socket.on("gameState", (gameState) => {
+      dispatch(updateGameState(gameState));
+    });
+
+    // Nettoyage à la déconnexion
+    return () => {
+      socket.off("gameState");
+    };
+  }, [dispatch]);
+
+  return children;
+};
+
+ReactDOM.render(
+  <Provider store={store}>
+    <BrowserRouter>
+      <SocketListener>
+        <App />
+      </SocketListener>
+    </BrowserRouter>
+  </Provider>,
+  document.getElementById("root")
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
