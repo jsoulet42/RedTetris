@@ -1,70 +1,36 @@
-# Getting Started with Create React App
+Red Tetris
+Version : 0.1.0
+Description : Red Tetris est une application de jeu Tetris multijoueur en temps réel, développée en utilisant les technologies modernes de JavaScript. Le projet utilise React pour l’interface utilisateur, Redux pour la gestion d’état, socket.io pour la communication en temps réel, et Immutable.js pour garantir l’immutabilité des données dans Redux.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Étapes de réalisation
+1. Initialisation du projet avec Create React App
+Création de la structure de base avec create-react-app.
+Mise en place de l’environnement de développement avec Webpack, Babel, et Jest.
+Création d’un fichier .gitignore pour exclure les fichiers sensibles et spécifiques au développement.
+2. Configuration des variables d’environnement
+Ajout d’un fichier .env pour les variables sensibles, comme les URL des serveurs.
+Test de l’accès aux variables d’environnement dans l’application.
+3. Installation des dépendances principales
+Ajout des dépendances côté client : react, redux, react-redux, redux-promise, react-router-dom, immutable, lodash, socket.io-client.
+Ajout de socket.io côté serveur pour la communication en temps réel.
+Ajout des dépendances de développement pour le test et la compatibilité avec Babel.
+Structure actuelle du projet
+Le projet est structuré de la manière suivante :
 
-## Available Scripts
-
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+bash
+Copier le code
+red-tetris/
+├── client/               # Contient le code côté client (React, Redux, etc.)
+├── server/               # Contiendra le code côté serveur (socket.io, Express)
+├── tests/                # Contiendra les tests unitaires et d'intégration
+├── .env                  # Variables d'environnement
+├── .gitignore            # Fichiers et dossiers ignorés par Git
+├── package.json          # Déclaration des dépendances et scripts
+└── README.md             # Documentation du projet
+Scripts disponibles
+yarn start : Démarre l’application en mode développement.
+yarn build : Crée un build optimisé pour la production.
+yarn test : Lance les tests configurés avec Jest.
+yarn eject : Expose la configuration complète (non recommandé pour le moment).
+Prochaine étape
+La prochaine étape du projet est la mise en place du serveur Node.js avec socket.io pour la communication en temps réel entre les clients.
