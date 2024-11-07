@@ -54,3 +54,10 @@ red-tetris/
 - Création des composants `Home` et `GameRoom` pour les pages principales.
 - Ajout des routes `/` et `/room/:roomId` dans `App.js` pour la navigation.
 - Test du routage pour accéder aux pages d'accueil et de salle de jeu.
+
+### 6. Mise en place de Redux pour la gestion de l’état global
+
+- Configuration de **Redux** avec `@reduxjs/toolkit` pour la gestion de l’état.
+- Ajout de `redux-promise` comme middleware pour les actions asynchrones.
+- Création d’un reducer de test utilisant **Immutable.js** pour garantir l’immutabilité.
+- Vérification de l'affichage du message provenant de Redux dans `App.js`.
