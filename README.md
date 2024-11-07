@@ -61,3 +61,10 @@ red-tetris/
 - Ajout de `redux-promise` comme middleware pour les actions asynchrones.
 - Création d’un reducer de test utilisant **Immutable.js** pour garantir l’immutabilité.
 - Vérification de l'affichage du message provenant de Redux dans `App.js`.
+
+### 7. Création de l'interface utilisateur de base avec React
+
+- Création du composant `GameGrid` pour afficher la grille de jeu Tetris (10x20).
+- Création du composant `PlayerList` pour afficher la liste des joueurs connectés.
+- Intégration de `GameGrid` et `PlayerList` dans la page `GameRoom`.
+- Test de l'affichage de la page de salle de jeu avec la grille et les joueurs fictifs.
