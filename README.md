@@ -47,3 +47,10 @@ red-tetris/
 - Création du serveur avec **Express** pour servir les fichiers statiques et gérer les connexions socket.io.
 - Configuration d'un script pour démarrer le serveur sur le port 4000.
 - Test de la connexion entre le client React et le serveur en temps réel.
+
+### 5. Configuration de BrowserRouter pour le routage côté client
+
+- Intégration de **BrowserRouter** dans `src/index.js` pour permettre le routage.
+- Création des composants `Home` et `GameRoom` pour les pages principales.
+- Ajout des routes `/` et `/room/:roomId` dans `App.js` pour la navigation.
+- Test du routage pour accéder aux pages d'accueil et de salle de jeu.
