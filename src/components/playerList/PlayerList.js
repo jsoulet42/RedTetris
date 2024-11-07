@@ -1,4 +1,5 @@
 import React from "react";
+import "./PlayerList.css";
 
 function PlayerList() {
   const players = ["Player 1", "Player 2", "Player 3"]; // Exemple de données

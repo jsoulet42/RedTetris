@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router-dom";
-import Home from "./Home";
-import GameRoom from "./GameRoom";
+import Home from "./pages/Home";
+import GameRoom from "./pages/GameRoom";
 import { useSelector } from "react-redux";
 
 function App() {

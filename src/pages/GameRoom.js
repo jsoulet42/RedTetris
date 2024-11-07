@@ -1,6 +1,6 @@
 import React from "react";
-import GameGrid from "./GameGrid";
-import PlayerList from "./PlayerList";
+import GameGrid from "../components/gameGrid/GameGrid";
+import PlayerList from "../components/playerList/PlayerList";
 
 function GameRoom() {
   return (
