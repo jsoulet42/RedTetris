@@ -1,3 +1,4 @@
+// ./src/redux/store.js
 import { configureStore } from "@reduxjs/toolkit";
 import promiseMiddleware from "redux-promise";
 import rootReducer from "./reducers";

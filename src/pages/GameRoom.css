@@ -1,0 +1,12 @@
+/* ./src/pages/GameRoom.css */
+.game-room {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  outline: none; /* Supprimer le contour de focus par défaut */
+}
+
+.score-board {
+  margin-top: 20px;
+}
