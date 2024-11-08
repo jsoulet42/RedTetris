@@ -1,4 +1,5 @@
-// ./server/sockets/gameEvents.js
+// ./server/sockets/gameEvents.js : Gère les événements Socket.io liés au jeu (joindre, déplacer, tourner, tomber, déconnexion).
+
 const {
   movePiece,
   rotatePiece,

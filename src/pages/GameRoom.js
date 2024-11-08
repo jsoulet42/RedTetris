@@ -1,4 +1,5 @@
-// ./src/pages/GameRoom.js
+// ./src/pages/GameRoom.js : Composant principal pour la salle de jeu, gère les contrôles clavier et les événements Socket.io.
+
 import React, { useEffect, useRef } from "react";
 import GameGrid from "../components/gameGrid/GameGrid";
 import PlayerList from "../components/playerList/PlayerList";

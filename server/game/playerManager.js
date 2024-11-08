@@ -1,4 +1,5 @@
-// ./server/game/playerManager.js
+// ./server/game/playerManager.js : Gère les joueurs connectés (ajout, suppression, suivi de l’état du jeu).
+
 const { generateRandomPiece } = require("./gameLogic");
 const { GRID_WIDTH, GRID_HEIGHT } = require("../config/constants");
 

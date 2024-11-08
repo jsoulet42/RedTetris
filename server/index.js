@@ -1,4 +1,5 @@
-// ./server/index.js
+//./server/index.js : Point d’entrée du serveur, configure Express et Socket.io, et lance la boucle de jeu.
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");

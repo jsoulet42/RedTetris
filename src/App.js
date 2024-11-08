@@ -1,4 +1,5 @@
-// ./src/App.js
+// ./src/App.js : Définit les routes de l’application et affiche le message de test et le score.
+
 import { Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import GameRoom from "./pages/GameRoom";

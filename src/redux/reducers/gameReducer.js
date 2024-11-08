@@ -1,4 +1,4 @@
-// ./src/redux/reducers/gameReducer.js
+// ./src/redux/reducers/gameReducer.js : Gère l’état du jeu (grille, pièce actuelle, score).
 import { Map } from "immutable";
 
 const initialState = Map({

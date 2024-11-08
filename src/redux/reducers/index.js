@@ -1,4 +1,5 @@
-// ./src/redux/reducers/index.js
+// ./src/redux/reducers/index.js : Combine tous les reducers en un rootReducer.
+
 import { combineReducers } from "redux";
 import testReducer from "./testReducer";
 import gameReducer from "./gameReducer"; // Import du nouveau reducer

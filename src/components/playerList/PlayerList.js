@@ -1,3 +1,5 @@
+// ./src/components/playerList/PlayerList.js : Affiche la liste des joueurs connectés (actuellement statique).
+
 import React from "react";
 import "./PlayerList.css";
 

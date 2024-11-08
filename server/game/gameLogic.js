@@ -1,4 +1,5 @@
-// ./server/game/gameLogic.js
+// ./server/game/gameLogic.js : Contient la logique de base du jeu (génération des pièces, mouvements, rotations, empilement, suppression des lignes).
+
 const { GRID_WIDTH, GRID_HEIGHT } = require("../config/constants");
 
 const TETROMINOS = {

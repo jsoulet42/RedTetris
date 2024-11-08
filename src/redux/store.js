@@ -1,4 +1,5 @@
-// ./src/redux/store.js
+// ./src/redux/store.js : Configure le store Redux avec les reducers et middlewares.
+
 import { configureStore } from "@reduxjs/toolkit";
 import promiseMiddleware from "redux-promise";
 import rootReducer from "./reducers";

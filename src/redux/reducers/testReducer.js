@@ -1,3 +1,5 @@
+// testReducer.js : Un reducer de test pour vérifier que Redux fonctionne.
+
 import { Map } from "immutable";
 
 const initialState = Map({

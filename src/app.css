@@ -1,4 +1,4 @@
-/* ./src/App.css */
+/* ./src/App.css : Styles pour l’application, notamment pour l’affichage du score. */
 .score-display {
   position: fixed;
   top: 10px;

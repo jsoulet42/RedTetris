@@ -1,4 +1,5 @@
-// ./src/index.js
+// ./src/index.js : Point d’entrée de l’application React, configure Redux et Socket.io, et écoute les événements du serveur.
+
 import React from "react";
 import ReactDOM from "react-dom";
 import App from "./App";
