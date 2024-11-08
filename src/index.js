@@ -1,4 +1,4 @@
-// ./src/index.js : Point d’entrée de l’application React, configure Redux et Socket.io, et écoute les événements du serveur.
+// ./src/index.js
 
 import React from "react";
 import ReactDOM from "react-dom";
@@ -9,19 +9,26 @@ import store from "./redux/store";
 import socket from "./socket";
 import { updateGameState } from "./redux/actions/gameActions";
 
-// Créer un composant pour gérer les connexions socket
 const SocketListener = ({ children }) => {
   const dispatch = useDispatch();
 
   React.useEffect(() => {
     // Écouter l'événement 'gameState' depuis le serveur
     socket.on("gameState", (gameState) => {
+      console.log("Reçu gameState :", gameState); // Debug
       dispatch(updateGameState(gameState));
+    });
+
+    // Écouter l'événement 'gameStarted'
+    socket.on("gameStarted", ({ roomId }) => {
+      console.log(`La partie dans la room ${roomId} a commencé.`);
+      // Vous pouvez ajouter ici des actions supplémentaires si nécessaire
     });
 
     // Nettoyage à la déconnexion
     return () => {
       socket.off("gameState");
+      socket.off("gameStarted");
     };
   }, [dispatch]);
 

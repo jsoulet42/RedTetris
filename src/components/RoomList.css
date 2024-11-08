@@ -1,0 +1,22 @@
+/* ./src/components/RoomList.css */
+
+.room-list {
+  margin-top: 20px;
+}
+
+.room-list ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.room-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.room-list button {
+  padding: 5px 10px;
+  cursor: pointer;
+}

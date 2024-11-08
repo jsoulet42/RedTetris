@@ -1,7 +1,7 @@
-// ./src/components/gameGrid/GameGrid.js : Affiche la grille de jeu et les pièces en utilisant les données du store Redux.
+// ./src/components/gameGrid/GameGrid.js
 
 import React from "react";
-import { useSelector } from "react-redux";
+import { useSelector } from "react-redux"; // Assurez-vous que cette ligne est présente et correcte
 import "./GameGrid.css";
 
 function GameGrid() {

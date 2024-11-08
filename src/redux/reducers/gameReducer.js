@@ -1,10 +1,12 @@
-// ./src/redux/reducers/gameReducer.js : Gère l’état du jeu (grille, pièce actuelle, score).
+// ./src/redux/reducers/gameReducer.js
+
 import { Map } from "immutable";
 
 const initialState = Map({
-  grid: Array(20).fill(Array(10).fill(0)), // Grille 20x10 vide
-  currentPiece: null, // Pas de pièce initialement
+  grid: Array.from({ length: 20 }, () => Array(10).fill(0)),
+  currentPiece: null,
   score: 0,
+  mode: "multiplayer", // Valeur par défaut, à mettre à jour avec gameState
 });
 
 function gameReducer(state = initialState, action) {
@@ -13,7 +15,8 @@ function gameReducer(state = initialState, action) {
       return state
         .set("grid", action.payload.grid)
         .set("currentPiece", action.payload.currentPiece)
-        .set("score", action.payload.score);
+        .set("score", action.payload.score)
+        .set("mode", action.payload.mode); // Mettre à jour le mode
     default:
       return state;
   }

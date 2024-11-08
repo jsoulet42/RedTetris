@@ -1,4 +1,4 @@
-// ./server/sockets/gameEvents.js : Gère les événements Socket.io liés au jeu (joindre, déplacer, tourner, tomber, déconnexion).
+// ./server/sockets/gameEvents.js
 
 const {
   movePiece,
@@ -9,16 +9,83 @@ const {
   clearCompleteLines,
 } = require("../game/gameLogic");
 const { addPlayer, removePlayer, players } = require("../game/playerManager");
+const {
+  createRoom,
+  joinRoom,
+  leaveRoom,
+  startRoom,
+  getAvailableRooms,
+  rooms,
+} = require("../game/roomManager");
 
 function handleGameEvents(socket, io) {
   // Lorsqu'un joueur rejoint
-  socket.on("joinGame", () => {
-    addPlayer(socket.id);
-    console.log("Émission initiale de gameState pour :", socket.id);
-    io.to(socket.id).emit("gameState", players[socket.id]);
+  socket.on("joinGame", ({ mode, roomId }) => {
+    if (mode === "solo") {
+      // Créer une salle unique pour le mode solo
+      const soloRoomId = createRoom(socket.id);
+      startRoom(soloRoomId, true); // Forcer le démarrage en solo
+      socket.join(soloRoomId);
+      addPlayer(socket.id, soloRoomId, "solo"); // Passer le mode
+      io.to(socket.id).emit("roomCreated", { roomId: soloRoomId });
+      io.to(socket.id).emit("gameState", {
+        roomId: soloRoomId,
+        grid: players[socket.id].grid,
+        currentPiece: players[socket.id].currentPiece,
+        score: players[socket.id].score,
+        mode: players[socket.id].mode,
+      });
+      console.log(`Room solo créée: ${soloRoomId} par ${socket.id}`);
+    } else if (mode === "multiplayer") {
+      if (roomId) {
+        // Tenter de rejoindre une salle existante
+        const success = joinRoom(roomId, socket.id);
+        if (success) {
+          socket.join(roomId);
+          addPlayer(socket.id, roomId, "multiplayer"); // Passer le mode
+          io.to(rooms[roomId].host).emit("roomJoined", {
+            roomId,
+            players: rooms[roomId].players.length,
+          });
+          console.log(`Joueur ${socket.id} a rejoint la room ${roomId}`);
+          // Si la salle atteint le nombre de joueurs requis (2), démarrer la partie
+          if (rooms[roomId].players.length >= 2) {
+            startRoom(roomId);
+            io.to(roomId).emit("gameStarted", { roomId });
+            console.log(`Partie démarrée dans la room ${roomId}`);
+            // Émettre l'état initial du jeu à tous les joueurs de la salle
+            rooms[roomId].players.forEach((playerId) => {
+              io.to(playerId).emit("gameState", {
+                roomId,
+                grid: players[playerId].grid,
+                currentPiece: players[playerId].currentPiece,
+                score: players[playerId].score,
+                mode: players[playerId].mode,
+              });
+            });
+          }
+        } else {
+          // Salle pleine ou inexistante
+          io.to(socket.id).emit(
+            "error",
+            "La partie est pleine ou n'existe pas."
+          );
+          console.log(`Échec de rejoindre la room ${roomId} pour ${socket.id}`);
+        }
+      } else {
+        // Créer une nouvelle salle multijoueur
+        const newRoomId = createRoom(socket.id);
+        socket.join(newRoomId);
+        addPlayer(socket.id, newRoomId, "multiplayer"); // Passer le mode
+        io.to(socket.id).emit("roomCreated", { roomId: newRoomId });
+        console.log(
+          `Nouvelle room multijoueur créée: ${newRoomId} par ${socket.id}`
+        );
+      }
+    }
   });
 
-  // Gérer le déplacement des pièces
+  // Gérer les déplacements des pièces
   socket.on("movePiece", (direction) => {
     const player = players[socket.id];
     if (player && player.currentPiece) {
@@ -34,7 +101,13 @@ function handleGameEvents(socket, io) {
         // Mettre à jour le score
         player.score += 100;
       }
-      io.to(socket.id).emit("gameState", player);
+      io.to(player.roomId).emit("gameState", {
+        roomId: player.roomId,
+        grid: player.grid,
+        currentPiece: player.currentPiece,
+        score: player.score,
+        mode: player.mode,
+      });
     }
   });
 
@@ -44,7 +117,13 @@ function handleGameEvents(socket, io) {
     if (player && player.currentPiece) {
       const rotatedPiece = rotatePiece(player.currentPiece, player.grid);
       player.currentPiece = rotatedPiece;
-      io.to(socket.id).emit("gameState", player);
+      io.to(player.roomId).emit("gameState", {
+        roomId: player.roomId,
+        grid: player.grid,
+        currentPiece: player.currentPiece,
+        score: player.score,
+        mode: player.mode,
+      });
     }
   });
 
@@ -64,15 +143,28 @@ function handleGameEvents(socket, io) {
         // Mettre à jour le score
         player.score += 100;
       }
-      io.to(socket.id).emit("gameState", player);
+      io.to(player.roomId).emit("gameState", {
+        roomId: player.roomId,
+        grid: player.grid,
+        currentPiece: player.currentPiece,
+        score: player.score,
+        mode: player.mode,
+      });
     }
   });
 
   // Lorsqu'un joueur se déconnecte
   socket.on("disconnect", () => {
-    removePlayer(socket.id);
+    const player = players[socket.id];
+    if (player) {
+      const roomId = player.roomId;
+      leaveRoom(roomId, socket.id);
+      removePlayer(socket.id);
+      // Informer les autres joueurs de la salle
+      io.to(roomId).emit("playerLeft", { playerId: socket.id });
+      console.log(`Joueur ${socket.id} a quitté la room ${roomId}`);
+    }
     console.log("Joueur déconnecté :", socket.id);
-    // Optionnel : Informer les autres joueurs
   });
 }
 

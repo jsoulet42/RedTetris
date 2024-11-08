@@ -1,4 +1,4 @@
-// ./src/redux/actions/gameActions.js : Définit les actions pour mettre à jour l’état du jeu.
+// ./src/redux/actions/gameActions.js
 
 export const updateGameState = (gameState) => ({
   type: "UPDATE_GAME_STATE",
