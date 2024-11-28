@@ -1,6 +1,14 @@
-// ./src/socket.js : Configure et exporte l’instance Socket.io pour être utilisée dans les composants React.
+// ./src/socket.js
 
 import { io } from "socket.io-client";
-const socket = io(process.env.REACT_APP_SOCKET_SERVER); // Utiliser la variable d'environnement
+const socket = io(process.env.REACT_APP_SOCKET_SERVER);
+
+socket.on("connect", () => {
+  console.log("Socket connecté :", socket.id);
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("Socket déconnecté :", reason);
+});
 
 export default socket;

@@ -145,12 +145,22 @@ function stackPiece(grid, piece) {
 
 // Supprime les lignes complètes et renvoie la nouvelle grille
 function clearCompleteLines(grid) {
-  const newGrid = grid.filter((row) => row.some((cell) => cell === 0));
-  const linesCleared = GRID_HEIGHT - newGrid.length;
+  let linesCleared = 0;
+  const newGrid = grid.filter((row) => {
+    const isComplete = row.every((cell) => cell === 1);
+    if (isComplete) {
+      linesCleared += 1;
+      return false; // Exclure la ligne complète
+    }
+    return true; // Garder la ligne incomplète
+  });
   const emptyLines = Array(linesCleared)
     .fill(0)
     .map(() => Array(GRID_WIDTH).fill(0));
-  return emptyLines.concat(newGrid);
+  return {
+    grid: emptyLines.concat(newGrid),
+    linesCleared,
+  };
 }
 
 module.exports = {

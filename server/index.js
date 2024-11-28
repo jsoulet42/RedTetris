@@ -34,18 +34,32 @@ io.on("connection", (socket) => {
   handleGameEvents(socket, io); // Gérer les événements du jeu pour ce socket
 });
 
+// Fonction pour calculer le score en fonction des lignes supprimées
+function computeScore(linesCleared) {
+  switch (linesCleared) {
+    case 1:
+      return 40;
+    case 2:
+      return 100;
+    case 3:
+      return 300;
+    case 4:
+      return 1200; // Tetris !
+    default:
+      return 0;
+  }
+}
+
 // Boucle de jeu principale
 setInterval(() => {
-  // Vérifie si `rooms` est défini
   if (!rooms) {
     console.error("Erreur : `rooms` n'est pas défini !");
     return;
   }
 
-  // Pour chaque room
   Object.keys(rooms).forEach((roomId) => {
     const room = rooms[roomId];
-    if (room.status !== "in-progress") return; // Ne traiter que les salles en cours
+    if (room.status !== "in-progress") return;
 
     room.players.forEach((playerId) => {
       const player = players[playerId];
@@ -54,22 +68,40 @@ setInterval(() => {
         if (newPiece) {
           player.currentPiece = newPiece;
         } else {
-          // Empiler la pièce sur la grille
           player.grid = stackPiece(player.grid, player.currentPiece);
           player.currentPiece = generateRandomPiece();
-          // Vérifier et supprimer les lignes complètes
-          player.grid = clearCompleteLines(player.grid);
+
+          // Supprimer les lignes complètes
+          const { grid: newGrid, linesCleared } = clearCompleteLines(
+            player.grid
+          );
+          player.grid = newGrid;
+
           // Mettre à jour le score
-          player.score += 100;
+          const scoreIncrement = computeScore(linesCleared);
+          player.score += scoreIncrement;
         }
+
         // Émettre l'état du jeu mis à jour uniquement au joueur concerné
-        io.to(playerId).emit("gameState", player);
+        io.to(playerId).emit("gameState", {
+          roomId: player.roomId,
+          grid: player.grid,
+          currentPiece: player.currentPiece,
+          score: player.score,
+          mode: player.mode,
+        });
+
+        // Envoyer une mise à jour aux autres joueurs de la room
+        io.to(player.roomId).emit("opponentUpdate", {
+          playerId: playerId,
+          score: player.score,
+        });
       }
     });
   });
 }, 1000); // Chute toutes les secondes
 
 // Lancer le serveur
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Serveur socket.io lancé sur le port ${PORT}`);
 });

@@ -57,7 +57,7 @@
 
 ==== ./.env ====
 REACT_APP_API_URL=http://localhost:3000
-REACT_APP_SOCKET_SERVER=http://localhost:4000
+REACT_APP_SOCKET_SERVER=http://10.18.199.102:4000
 -e 
 
 ==== ./src/redux/actions/gameActions.js ====
@@ -66,6 +66,15 @@ REACT_APP_SOCKET_SERVER=http://localhost:4000
 export const updateGameState = (gameState) => ({
   type: "UPDATE_GAME_STATE",
   payload: gameState,
+});
+
+export const gameStarted = () => ({
+  type: "GAME_STARTED",
+});
+
+export const updateOpponentState = (data) => ({
+  type: "UPDATE_OPPONENT_STATE",
+  payload: data,
 });
 -e 
 
@@ -134,7 +143,9 @@ const initialState = Map({
   grid: Array.from({ length: 20 }, () => Array(10).fill(0)),
   currentPiece: null,
   score: 0,
-  mode: "multiplayer", // Valeur par défaut, à mettre à jour avec gameState
+  mode: "multiplayer",
+  gameStarted: false, // Ajout de l'état initial
+  opponents: Map(),
 });
 
 function gameReducer(state = initialState, action) {
@@ -144,7 +155,18 @@ function gameReducer(state = initialState, action) {
         .set("grid", action.payload.grid)
         .set("currentPiece", action.payload.currentPiece)
         .set("score", action.payload.score)
-        .set("mode", action.payload.mode); // Mettre à jour le mode
+        .set("mode", action.payload.mode)
+        .set(
+          "gameStarted",
+          action.payload.gameStarted || state.get("gameStarted")
+        ); // Mettre à jour gameStarted si présent
+    case "GAME_STARTED":
+      return state.set("gameStarted", true);
+    case "UPDATE_OPPONENT_STATE":
+      return state.setIn(
+        ["opponents", action.payload.playerId],
+        Map(action.payload)
+      );
     default:
       return state;
   }
@@ -157,7 +179,7 @@ export default gameReducer;
 // ./src/pages/GameRoom.js
 
 import React, { useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom"; // Ajouter useLocation ici
 import { useSelector, useDispatch } from "react-redux";
 import GameGrid from "../components/gameGrid/GameGrid";
 import PlayerList from "../components/playerList/PlayerList";
@@ -167,27 +189,30 @@ import "./GameRoom.css";
 
 function GameRoom() {
   const { roomId } = useParams();
+  const location = useLocation(); // Obtenir l'état de navigation
   const gameRoomRef = useRef(null);
   const score = useSelector((state) => state.game.get("score"));
   const mode = useSelector((state) => state.game.get("mode"));
   const dispatch = useDispatch();
+  const gameStarted = useSelector((state) => state.game.get("gameStarted"));
 
   useEffect(() => {
-    // Si roomId est présent, rejoindre la room
-    if (roomId) {
-      console.log("Rejoindre la room :", roomId); // Debug
-      // L'événement 'joinGame' est déjà émis depuis Home.js
-      // Donc, pas besoin de l'émettre ici
+    const isCreator = location.state?.isCreator;
+
+    console.log("Mount GameRoom, isCreator:", isCreator);
+
+    if (roomId && !isCreator) {
+      console.log("Rejoindre la room :", roomId);
+      socket.emit("joinGame", { mode: "multiplayer", roomId });
     }
 
-    // Gérer les déconnexions
     return () => {
-      if (roomId) {
+      if (roomId && !isCreator) {
+        console.log("Quitter la room :", roomId);
         socket.emit("leaveRoom", { roomId });
       }
-      socket.disconnect();
     };
-  }, [roomId]);
+  }, [roomId, location.state]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -231,16 +256,21 @@ function GameRoom() {
     <div
       className="game-room"
       ref={gameRoomRef}
-      tabIndex="0" // Permet de recevoir les événements clavier
-      style={{ outline: "none" }} // Supprimer le contour de focus par défaut
+      tabIndex="0"
+      style={{ outline: "none" }}
     >
       <h1>Salle de Jeu - {roomId}</h1>
-      <GameGrid />
-      {mode === "multiplayer" && <PlayerList />}{" "}
-      {/* Afficher uniquement en multijoueur */}
-      <div className="score-board">
-        <h2>Score: {score}</h2>
-      </div>
+      {gameStarted ? (
+        <>
+          <GameGrid />
+          {mode === "multiplayer" && <PlayerList />}
+          <div className="score-board">
+            <h2>Score: {score}</h2>
+          </div>
+        </>
+      ) : (
+        <p>En attente d'autres joueurs...</p>
+      )}
     </div>
   );
 }
@@ -319,7 +349,7 @@ function Home() {
 
     // Écouter les créations de room
     socket.on("roomCreated", ({ roomId }) => {
-      navigate(`/room/${roomId}`);
+      navigate(`/room/${roomId}`, { state: { isCreator: true } }); // Passer isCreator: true
     });
 
     // Écouter les erreurs
@@ -381,7 +411,11 @@ import { BrowserRouter } from "react-router-dom";
 import { Provider, useDispatch } from "react-redux";
 import store from "./redux/store";
 import socket from "./socket";
-import { updateGameState } from "./redux/actions/gameActions";
+import {
+  updateGameState,
+  gameStarted,
+  updateOpponentState,
+} from "./redux/actions/gameActions";
 
 const SocketListener = ({ children }) => {
   const dispatch = useDispatch();
@@ -396,7 +430,15 @@ const SocketListener = ({ children }) => {
     // Écouter l'événement 'gameStarted'
     socket.on("gameStarted", ({ roomId }) => {
       console.log(`La partie dans la room ${roomId} a commencé.`);
+      dispatch(gameStarted());
       // Vous pouvez ajouter ici des actions supplémentaires si nécessaire
+    });
+
+    // Écouter l'événement 'opponentUpdate' pour mettre à jour l'affichage des adversaires
+    socket.on("opponentUpdate", (data) => {
+      console.log("Reçu opponentUpdate :", data);
+      dispatch(updateOpponentState(data));
+      // Ou mettre à jour un état local si vous préférez
     });
 
     // Nettoyage à la déconnexion
@@ -528,21 +570,28 @@ export default RoomList;
 -e 
 
 ==== ./src/components/playerList/PlayerList.js ====
-// ./src/components/playerList/PlayerList.js : Affiche la liste des joueurs connectés (actuellement statique).
+// ./src/components/playerList/PlayerList.js
 
 import React from "react";
+import { useSelector } from "react-redux";
 import "./PlayerList.css";
 
 function PlayerList() {
-  const players = ["Player 1", "Player 2", "Player 3"]; // Exemple de données
+  const opponents = useSelector((state) => state.game.get("opponents"));
 
   return (
     <div className="player-list">
       <h2>Liste des joueurs</h2>
       <ul>
-        {players.map((player, index) => (
-          <li key={index}>{player}</li>
-        ))}
+        {opponents &&
+          opponents
+            .map((opponent, playerId) => (
+              <li key={playerId}>
+                Joueur {playerId} - Score: {opponent.score}
+                {/* Vous pouvez afficher plus d'informations si nécessaire */}
+              </li>
+            ))
+            .toArray()}
       </ul>
     </div>
   );
@@ -664,10 +713,18 @@ export default GameGrid;
 -e 
 
 ==== ./src/socket.js ====
-// ./src/socket.js : Configure et exporte l’instance Socket.io pour être utilisée dans les composants React.
+// ./src/socket.js
 
 import { io } from "socket.io-client";
-const socket = io(process.env.REACT_APP_SOCKET_SERVER); // Utiliser la variable d'environnement
+const socket = io(process.env.REACT_APP_SOCKET_SERVER);
+
+socket.on("connect", () => {
+  console.log("Socket connecté :", socket.id);
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("Socket déconnecté :", reason);
+});
 
 export default socket;
 -e 
@@ -802,7 +859,7 @@ setInterval(() => {
 }, 1000); // Chute toutes les secondes
 
 // Lancer le serveur
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Serveur socket.io lancé sur le port ${PORT}`);
 });
 -e 
@@ -888,9 +945,13 @@ function leaveRoom(roomId, playerId) {
  * @param {string} roomId - ID de la room à démarrer.
  * @returns {boolean} - Succès ou échec de l'opération.
  */
-function startRoom(roomId) {
+function startRoom(roomId, force = false) {
   const room = rooms[roomId];
-  if (room && room.status === "waiting" && room.players.length >= MAX_PLAYERS) {
+  if (
+    room &&
+    room.status === "waiting" &&
+    (force || room.players.length >= MAX_PLAYERS)
+  ) {
     room.status = "in-progress";
     return true;
   }
@@ -1143,7 +1204,7 @@ function handleGameEvents(socket, io) {
     if (mode === "solo") {
       // Créer une salle unique pour le mode solo
       const soloRoomId = createRoom(socket.id);
-      startRoom(soloRoomId); // Démarrer immédiatement en solo
+      startRoom(soloRoomId, true); // Forcer le démarrage en solo
       socket.join(soloRoomId);
       addPlayer(socket.id, soloRoomId, "solo"); // Passer le mode
       io.to(socket.id).emit("roomCreated", { roomId: soloRoomId });
@@ -1220,12 +1281,19 @@ function handleGameEvents(socket, io) {
         // Mettre à jour le score
         player.score += 100;
       }
-      io.to(player.roomId).emit("gameState", {
+      io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
         grid: player.grid,
         currentPiece: player.currentPiece,
         score: player.score,
         mode: player.mode,
+      });
+
+      // Envoyer une mise à jour aux autres joueurs de la room
+      socket.broadcast.to(player.roomId).emit("opponentUpdate", {
+        playerId: socket.id,
+        score: player.score,
+        // Tu peux inclure une version simplifiée de la grille si nécessaire
       });
     }
   });
@@ -1236,12 +1304,19 @@ function handleGameEvents(socket, io) {
     if (player && player.currentPiece) {
       const rotatedPiece = rotatePiece(player.currentPiece, player.grid);
       player.currentPiece = rotatedPiece;
-      io.to(player.roomId).emit("gameState", {
+      io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
         grid: player.grid,
         currentPiece: player.currentPiece,
         score: player.score,
         mode: player.mode,
+      });
+
+      // Envoyer une mise à jour aux autres joueurs de la room
+      socket.broadcast.to(player.roomId).emit("opponentUpdate", {
+        playerId: socket.id,
+        score: player.score,
+        // Tu peux inclure une version simplifiée de la grille si nécessaire
       });
     }
   });
@@ -1262,12 +1337,18 @@ function handleGameEvents(socket, io) {
         // Mettre à jour le score
         player.score += 100;
       }
-      io.to(player.roomId).emit("gameState", {
+      io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
         grid: player.grid,
         currentPiece: player.currentPiece,
         score: player.score,
         mode: player.mode,
+      });
+
+      // Envoyer une mise à jour aux autres joueurs de la room
+      socket.broadcast.to(player.roomId).emit("opponentUpdate", {
+        playerId: socket.id,
+        score: player.score,
       });
     }
   });

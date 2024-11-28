@@ -1,18 +1,25 @@
-// ./src/components/playerList/PlayerList.js : Affiche la liste des joueurs connectés (actuellement statique).
+// ./src/components/playerList/PlayerList.js
 
 import React from "react";
+import { useSelector } from "react-redux";
 import "./PlayerList.css";
 
 function PlayerList() {
-  const players = ["Player 1", "Player 2", "Player 3"]; // Exemple de données
+  const opponents = useSelector((state) => state.game.get("opponents"));
 
   return (
     <div className="player-list">
       <h2>Liste des joueurs</h2>
       <ul>
-        {players.map((player, index) => (
-          <li key={index}>{player}</li>
-        ))}
+        {opponents &&
+          opponents
+            .valueSeq() // Obtenir la liste des valeurs
+            .map((opponent) => (
+              <li key={opponent.get("playerId")}>
+                Joueur {opponent.get("playerId")} - Score:{" "}
+                {opponent.get("score")}
+              </li>
+            ))}
       </ul>
     </div>
   );

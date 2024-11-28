@@ -27,7 +27,7 @@ function Home() {
 
     // Écouter les créations de room
     socket.on("roomCreated", ({ roomId }) => {
-      navigate(`/room/${roomId}`);
+      navigate(`/room/${roomId}`, { state: { isCreator: true } }); // Passer isCreator: true
     });
 
     // Écouter les erreurs

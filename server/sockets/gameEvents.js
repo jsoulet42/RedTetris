@@ -18,6 +18,22 @@ const {
   rooms,
 } = require("../game/roomManager");
 
+// Fonction pour calculer le score en fonction des lignes supprimées
+function computeScore(linesCleared) {
+  switch (linesCleared) {
+    case 1:
+      return 40;
+    case 2:
+      return 100;
+    case 3:
+      return 300;
+    case 4:
+      return 1200; // Tetris !
+    default:
+      return 0;
+  }
+}
+
 function handleGameEvents(socket, io) {
   // Lorsqu'un joueur rejoint
   socket.on("joinGame", ({ mode, roomId }) => {
@@ -48,6 +64,12 @@ function handleGameEvents(socket, io) {
             players: rooms[roomId].players.length,
           });
           console.log(`Joueur ${socket.id} a rejoint la room ${roomId}`);
+          // Informer les autres joueurs de la room de l'arrivée du nouveau joueur
+          socket.broadcast.to(roomId).emit("opponentUpdate", {
+            playerId: socket.id,
+            score: players[socket.id].score,
+            // Vous pouvez ajouter d'autres informations comme le nom si vous l'avez
+          });
           // Si la salle atteint le nombre de joueurs requis (2), démarrer la partie
           if (rooms[roomId].players.length >= 2) {
             startRoom(roomId);
@@ -62,6 +84,16 @@ function handleGameEvents(socket, io) {
                 score: players[playerId].score,
                 mode: players[playerId].mode,
               });
+              // Envoyer les informations sur les adversaires
+              const opponents = rooms[roomId].players
+                .filter((id) => id !== playerId)
+                .map((id) => ({
+                  playerId: id,
+                  score: players[id].score,
+                  // Vous pouvez ajouter d'autres informations comme le nom si vous l'avez
+                }));
+
+              io.to(playerId).emit("initialOpponents", opponents);
             });
           }
         } else {
@@ -96,17 +128,27 @@ function handleGameEvents(socket, io) {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
         player.currentPiece = generateRandomPiece();
-        // Vérifier et supprimer les lignes complètes
-        player.grid = clearCompleteLines(player.grid);
-        // Mettre à jour le score
-        player.score += 100;
+        // Supprimer les lignes complètes
+        const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);
+        player.grid = newGrid;
+
+        // Mettre à jour le score en fonction des lignes supprimées
+        const scoreIncrement = computeScore(linesCleared);
+        player.score += scoreIncrement;
       }
-      io.to(player.roomId).emit("gameState", {
+      io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
         grid: player.grid,
         currentPiece: player.currentPiece,
         score: player.score,
         mode: player.mode,
+      });
+
+      // Envoyer une mise à jour aux autres joueurs de la room
+      socket.broadcast.to(player.roomId).emit("opponentUpdate", {
+        playerId: socket.id,
+        score: player.score,
+        // Tu peux inclure une version simplifiée de la grille si nécessaire
       });
     }
   });
@@ -117,12 +159,19 @@ function handleGameEvents(socket, io) {
     if (player && player.currentPiece) {
       const rotatedPiece = rotatePiece(player.currentPiece, player.grid);
       player.currentPiece = rotatedPiece;
-      io.to(player.roomId).emit("gameState", {
+      io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
         grid: player.grid,
         currentPiece: player.currentPiece,
         score: player.score,
         mode: player.mode,
+      });
+
+      // Envoyer une mise à jour aux autres joueurs de la room
+      socket.broadcast.to(player.roomId).emit("opponentUpdate", {
+        playerId: socket.id,
+        score: player.score,
+        // Tu peux inclure une version simplifiée de la grille si nécessaire
       });
     }
   });
@@ -138,17 +187,26 @@ function handleGameEvents(socket, io) {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
         player.currentPiece = generateRandomPiece();
-        // Vérifier et supprimer les lignes complètes
-        player.grid = clearCompleteLines(player.grid);
-        // Mettre à jour le score
-        player.score += 100;
+        // Supprimer les lignes complètes
+        const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);
+        player.grid = newGrid;
+
+        // Mettre à jour le score en fonction des lignes supprimées
+        const scoreIncrement = computeScore(linesCleared);
+        player.score += scoreIncrement;
       }
-      io.to(player.roomId).emit("gameState", {
+      io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
         grid: player.grid,
         currentPiece: player.currentPiece,
         score: player.score,
         mode: player.mode,
+      });
+
+      // Envoyer une mise à jour aux autres joueurs de la room
+      socket.broadcast.to(player.roomId).emit("opponentUpdate", {
+        playerId: socket.id,
+        score: player.score,
       });
     }
   });
