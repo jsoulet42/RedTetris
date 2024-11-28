@@ -8,6 +8,7 @@ import PlayerList from "../components/playerList/PlayerList";
 import socket from "../socket";
 import { updateGameState } from "../redux/actions/gameActions";
 import "./GameRoom.css";
+import PlayerNameInput from "../components/PlayerNameInput";
 
 function GameRoom() {
   const { roomId } = useParams();
@@ -17,24 +18,24 @@ function GameRoom() {
   const mode = useSelector((state) => state.game.get("mode"));
   const dispatch = useDispatch();
   const gameStarted = useSelector((state) => state.game.get("gameStarted"));
+  const playerName = localStorage.getItem("playerName");
 
   useEffect(() => {
+    if (!mode) return;
     const isCreator = location.state?.isCreator;
 
-    console.log("Mount GameRoom, isCreator:", isCreator);
-
-    if (roomId && !isCreator) {
+    if (mode === "multiplayer" && roomId && !isCreator) {
       console.log("Rejoindre la room :", roomId);
       socket.emit("joinGame", { mode: "multiplayer", roomId });
     }
 
     return () => {
-      if (roomId && !isCreator) {
+      if (mode === "multiplayer" && roomId && !isCreator) {
         console.log("Quitter la room :", roomId);
         socket.emit("leaveRoom", { roomId });
       }
     };
-  }, [roomId, location.state]);
+  }, [roomId, location.state, mode]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -82,7 +83,8 @@ function GameRoom() {
       style={{ outline: "none" }}
     >
       <h1>Salle de Jeu - {roomId}</h1>
-      {gameStarted ? (
+      <h2>Joueur : {playerName}</h2>
+      {gameStarted || mode === "solo" ? (
         <>
           <GameGrid />
           {mode === "multiplayer" && <PlayerList />}

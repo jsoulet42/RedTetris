@@ -12,14 +12,11 @@ function PlayerList() {
       <h2>Liste des joueurs</h2>
       <ul>
         {opponents &&
-          opponents
-            .valueSeq() // Obtenir la liste des valeurs
-            .map((opponent) => (
-              <li key={opponent.get("playerId")}>
-                Joueur {opponent.get("playerId")} - Score:{" "}
-                {opponent.get("score")}
-              </li>
-            ))}
+          opponents.valueSeq().map((opponent) => (
+            <li key={opponent.get("playerId")}>
+              {opponent.get("name")} - Score: {opponent.get("score")}
+            </li>
+          ))}
       </ul>
     </div>
   );

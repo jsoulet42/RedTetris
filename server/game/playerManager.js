@@ -11,10 +11,16 @@ const players = {};
  * @param {string} roomId - ID de la room
  * @param {string} mode - Mode de jeu ('solo' ou 'multiplayer')
  */
-function addPlayer(playerId, roomId, mode = "multiplayer") {
+function addPlayer(
+  playerId,
+  roomId,
+  mode = "multiplayer",
+  playerName = "Anonyme"
+) {
   players[playerId] = {
     roomId,
     mode, // Mode de jeu
+    name: playerName, // Ajouter le nom du joueur
     grid: Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(0)), // Initialise une grille vide
     currentPiece: generateRandomPiece(), // Assigne une pièce aléatoire
     score: 0,

@@ -6,9 +6,10 @@ import { useNavigate } from "react-router-dom";
 
 function RoomList({ rooms }) {
   const navigate = useNavigate();
+  const playerName = localStorage.getItem("playerName");
 
   const handleJoinRoom = (roomId) => {
-    socket.emit("joinGame", { mode: "multiplayer", roomId });
+    socket.emit("joinGame", { mode: "multiplayer", roomId, playerName });
     navigate(`/room/${roomId}`);
   };
 

@@ -35,14 +35,19 @@ function computeScore(linesCleared) {
 }
 
 function handleGameEvents(socket, io) {
+  socket.on("getAvailableRooms", () => {
+    const availableRooms = getAvailableRooms();
+    socket.emit("availableRooms", availableRooms);
+  });
+
   // Lorsqu'un joueur rejoint
-  socket.on("joinGame", ({ mode, roomId }) => {
+  socket.on("joinGame", ({ mode, roomId, playerName }) => {
     if (mode === "solo") {
       // Créer une salle unique pour le mode solo
       const soloRoomId = createRoom(socket.id);
       startRoom(soloRoomId, true); // Forcer le démarrage en solo
       socket.join(soloRoomId);
-      addPlayer(socket.id, soloRoomId, "solo"); // Passer le mode
+      addPlayer(socket.id, soloRoomId, "solo", playerName); // Passer le mode
       io.to(socket.id).emit("roomCreated", { roomId: soloRoomId });
       io.to(socket.id).emit("gameState", {
         roomId: soloRoomId,
@@ -51,6 +56,9 @@ function handleGameEvents(socket, io) {
         score: players[socket.id].score,
         mode: players[socket.id].mode,
       });
+      // Après avoir émis 'gameState' pour le mode solo
+      io.to(socket.id).emit("gameStarted", { roomId: soloRoomId });
+
       console.log(`Room solo créée: ${soloRoomId} par ${socket.id}`);
     } else if (mode === "multiplayer") {
       if (roomId) {
@@ -58,7 +66,7 @@ function handleGameEvents(socket, io) {
         const success = joinRoom(roomId, socket.id);
         if (success) {
           socket.join(roomId);
-          addPlayer(socket.id, roomId, "multiplayer"); // Passer le mode
+          addPlayer(socket.id, roomId, "multiplayer", playerName); // Passer le mode
           io.to(rooms[roomId].host).emit("roomJoined", {
             roomId,
             players: rooms[roomId].players.length,
@@ -67,6 +75,7 @@ function handleGameEvents(socket, io) {
           // Informer les autres joueurs de la room de l'arrivée du nouveau joueur
           socket.broadcast.to(roomId).emit("opponentUpdate", {
             playerId: socket.id,
+            name: players[socket.id].name,
             score: players[socket.id].score,
             // Vous pouvez ajouter d'autres informations comme le nom si vous l'avez
           });
@@ -89,6 +98,7 @@ function handleGameEvents(socket, io) {
                 .filter((id) => id !== playerId)
                 .map((id) => ({
                   playerId: id,
+                  name: players[id].name,
                   score: players[id].score,
                   // Vous pouvez ajouter d'autres informations comme le nom si vous l'avez
                 }));
@@ -108,11 +118,14 @@ function handleGameEvents(socket, io) {
         // Créer une nouvelle salle multijoueur
         const newRoomId = createRoom(socket.id);
         socket.join(newRoomId);
-        addPlayer(socket.id, newRoomId, "multiplayer"); // Passer le mode
+        addPlayer(socket.id, newRoomId, "multiplayer", playerName); // Passer le mode
         io.to(socket.id).emit("roomCreated", { roomId: newRoomId });
         console.log(
           `Nouvelle room multijoueur créée: ${newRoomId} par ${socket.id}`
         );
+        // Émettre la liste mise à jour des rooms disponibles à tous les clients
+        const availableRooms = getAvailableRooms();
+        io.emit("availableRooms", availableRooms);
       }
     }
   });
@@ -147,6 +160,7 @@ function handleGameEvents(socket, io) {
       // Envoyer une mise à jour aux autres joueurs de la room
       socket.broadcast.to(player.roomId).emit("opponentUpdate", {
         playerId: socket.id,
+        name: players[socket.id].name, // Inclure le nom
         score: player.score,
         // Tu peux inclure une version simplifiée de la grille si nécessaire
       });
@@ -170,6 +184,7 @@ function handleGameEvents(socket, io) {
       // Envoyer une mise à jour aux autres joueurs de la room
       socket.broadcast.to(player.roomId).emit("opponentUpdate", {
         playerId: socket.id,
+        name: players[socket.id].name, // Inclure le nom
         score: player.score,
         // Tu peux inclure une version simplifiée de la grille si nécessaire
       });
@@ -206,6 +221,7 @@ function handleGameEvents(socket, io) {
       // Envoyer une mise à jour aux autres joueurs de la room
       socket.broadcast.to(player.roomId).emit("opponentUpdate", {
         playerId: socket.id,
+        name: players[socket.id].name, // Inclure le nom
         score: player.score,
       });
     }
@@ -218,6 +234,9 @@ function handleGameEvents(socket, io) {
       const roomId = player.roomId;
       leaveRoom(roomId, socket.id);
       removePlayer(socket.id);
+      // Après avoir supprimé le joueur et quitté la room
+      const availableRooms = getAvailableRooms();
+      io.emit("availableRooms", availableRooms);
       // Informer les autres joueurs de la salle
       io.to(roomId).emit("playerLeft", { playerId: socket.id });
       console.log(`Joueur ${socket.id} a quitté la room ${roomId}`);

@@ -1,0 +1,30 @@
+/* ./src/pages/SoloGame.css */
+
+.solo-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  background-color: #f0f0f0; /* Couleur de fond douce */
+  height: 100vh; /* Prendre toute la hauteur de l'écran */
+}
+
+.solo-game h1 {
+  font-size: 2rem;
+  color: #333;
+}
+
+.solo-game h2 {
+  font-size: 1.5rem;
+  color: #666;
+}
+
+.score-board {
+  margin-top: 20px;
+  font-size: 1.2rem;
+}
+
+.game-grid {
+  margin-top: 20px;
+}

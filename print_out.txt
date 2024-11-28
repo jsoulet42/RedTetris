@@ -76,6 +76,11 @@ export const updateOpponentState = (data) => ({
   type: "UPDATE_OPPONENT_STATE",
   payload: data,
 });
+
+export const setOpponents = (opponents) => ({
+  type: "SET_OPPONENTS",
+  payload: opponents,
+});
 -e 
 
 ==== ./src/redux/store.js ====
@@ -162,6 +167,12 @@ function gameReducer(state = initialState, action) {
         ); // Mettre à jour gameStarted si présent
     case "GAME_STARTED":
       return state.set("gameStarted", true);
+    case "SET_OPPONENTS":
+      // Convertir la liste des adversaires en Map
+      const opponentsMap = action.payload.reduce((map, opponent) => {
+        return map.set(opponent.playerId, Map(opponent));
+      }, Map());
+      return state.set("opponents", opponentsMap);
     case "UPDATE_OPPONENT_STATE":
       return state.setIn(
         ["opponents", action.payload.playerId],
@@ -175,6 +186,39 @@ function gameReducer(state = initialState, action) {
 export default gameReducer;
 -e 
 
+==== ./src/pages/SoloGame.css ====
+/* ./src/pages/SoloGame.css */
+
+.solo-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  background-color: #f0f0f0; /* Couleur de fond douce */
+  height: 100vh; /* Prendre toute la hauteur de l'écran */
+}
+
+.solo-game h1 {
+  font-size: 2rem;
+  color: #333;
+}
+
+.solo-game h2 {
+  font-size: 1.5rem;
+  color: #666;
+}
+
+.score-board {
+  margin-top: 20px;
+  font-size: 1.2rem;
+}
+
+.game-grid {
+  margin-top: 20px;
+}
+-e 
+
 ==== ./src/pages/GameRoom.js ====
 // ./src/pages/GameRoom.js
 
@@ -186,6 +230,7 @@ import PlayerList from "../components/playerList/PlayerList";
 import socket from "../socket";
 import { updateGameState } from "../redux/actions/gameActions";
 import "./GameRoom.css";
+import PlayerNameInput from "../components/PlayerNameInput";
 
 function GameRoom() {
   const { roomId } = useParams();
@@ -195,24 +240,24 @@ function GameRoom() {
   const mode = useSelector((state) => state.game.get("mode"));
   const dispatch = useDispatch();
   const gameStarted = useSelector((state) => state.game.get("gameStarted"));
+  const playerName = localStorage.getItem("playerName");
 
   useEffect(() => {
+    if (!mode) return;
     const isCreator = location.state?.isCreator;
 
-    console.log("Mount GameRoom, isCreator:", isCreator);
-
-    if (roomId && !isCreator) {
+    if (mode === "multiplayer" && roomId && !isCreator) {
       console.log("Rejoindre la room :", roomId);
       socket.emit("joinGame", { mode: "multiplayer", roomId });
     }
 
     return () => {
-      if (roomId && !isCreator) {
+      if (mode === "multiplayer" && roomId && !isCreator) {
         console.log("Quitter la room :", roomId);
         socket.emit("leaveRoom", { roomId });
       }
     };
-  }, [roomId, location.state]);
+  }, [roomId, location.state, mode]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -260,7 +305,8 @@ function GameRoom() {
       style={{ outline: "none" }}
     >
       <h1>Salle de Jeu - {roomId}</h1>
-      {gameStarted ? (
+      <h2>Joueur : {playerName}</h2>
+      {gameStarted || mode === "solo" ? (
         <>
           <GameGrid />
           {mode === "multiplayer" && <PlayerList />}
@@ -333,6 +379,7 @@ function Home() {
   const [mode, setMode] = useState(null);
   const [rooms, setRooms] = useState([]);
   const navigate = useNavigate();
+  const playerName = localStorage.getItem("playerName");
 
   useEffect(() => {
     if (mode === "multiplayer") {
@@ -368,9 +415,9 @@ function Home() {
     setMode(selectedMode);
     if (selectedMode === "solo") {
       // Émettre l'événement pour rejoindre en solo
-      socket.emit("joinGame", { mode: "solo" });
+      socket.emit("joinGame", { mode: "solo", playerName });
+      navigate("/solo"); // Naviguer vers la page solo
     } else if (selectedMode === "multiplayer") {
-      // Émettre l'événement pour rejoindre en multijoueur
       // La liste des rooms sera demandée via l'effet précédent
     }
   };
@@ -401,6 +448,79 @@ function Home() {
 export default Home;
 -e 
 
+==== ./src/pages/SoloGame.js ====
+// ./src/pages/SoloGame.js
+
+import React, { useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
+import GameGrid from "../components/gameGrid/GameGrid";
+import socket from "../socket";
+import "./SoloGame.css";
+
+function SoloGame() {
+  const gameRoomRef = useRef(null);
+  const score = useSelector((state) => state.game.get("score"));
+  const playerName = localStorage.getItem("playerName");
+
+  useEffect(() => {
+    socket.emit("joinGame", { mode: "solo", playerName });
+
+    // Gérer les contrôles du joueur
+    const handleKeyDown = (e) => {
+      switch (e.key) {
+        case "ArrowLeft":
+          socket.emit("movePiece", "left");
+          break;
+        case "ArrowRight":
+          socket.emit("movePiece", "right");
+          break;
+        case "ArrowDown":
+          socket.emit("movePiece", "down");
+          break;
+        case "ArrowUp":
+          socket.emit("rotatePiece");
+          break;
+        case " ":
+          socket.emit("dropPiece");
+          break;
+        default:
+          break;
+      }
+    };
+
+    const currentRef = gameRoomRef.current;
+    if (currentRef) {
+      currentRef.addEventListener("keydown", handleKeyDown);
+      currentRef.focus();
+    }
+
+    return () => {
+      if (currentRef) {
+        currentRef.removeEventListener("keydown", handleKeyDown);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      className="solo-game"
+      ref={gameRoomRef}
+      tabIndex="0"
+      style={{ outline: "none" }}
+    >
+      <h1>Partie Solo</h1>
+      <h2>Joueur : {playerName}</h2>
+      <GameGrid />
+      <div className="score-board">
+        <h2>Score: {score}</h2>
+      </div>
+    </div>
+  );
+}
+
+export default SoloGame;
+-e 
+
 ==== ./src/index.js ====
 // ./src/index.js
 
@@ -415,6 +535,7 @@ import {
   updateGameState,
   gameStarted,
   updateOpponentState,
+  setOpponents,
 } from "./redux/actions/gameActions";
 
 const SocketListener = ({ children }) => {
@@ -434,6 +555,12 @@ const SocketListener = ({ children }) => {
       // Vous pouvez ajouter ici des actions supplémentaires si nécessaire
     });
 
+    // Écouter l'événement 'initialOpponents'
+    socket.on("initialOpponents", (opponents) => {
+      console.log("Reçu initialOpponents :", opponents);
+      dispatch(setOpponents(opponents));
+    });
+
     // Écouter l'événement 'opponentUpdate' pour mettre à jour l'affichage des adversaires
     socket.on("opponentUpdate", (data) => {
       console.log("Reçu opponentUpdate :", data);
@@ -445,6 +572,7 @@ const SocketListener = ({ children }) => {
     return () => {
       socket.off("gameState");
       socket.off("gameStarted");
+      socket.off("initialOpponents");
     };
   }, [dispatch]);
 
@@ -490,8 +618,10 @@ import React from "react";
 import socket from "../socket";
 
 function CreateRoom() {
+  const playerName = localStorage.getItem("playerName");
+
   const handleCreateRoom = () => {
-    socket.emit("joinGame", { mode: "multiplayer" });
+    socket.emit("joinGame", { mode: "multiplayer", playerName, create: true });
   };
 
   return (
@@ -538,9 +668,10 @@ import { useNavigate } from "react-router-dom";
 
 function RoomList({ rooms }) {
   const navigate = useNavigate();
+  const playerName = localStorage.getItem("playerName");
 
   const handleJoinRoom = (roomId) => {
-    socket.emit("joinGame", { mode: "multiplayer", roomId });
+    socket.emit("joinGame", { mode: "multiplayer", roomId, playerName });
     navigate(`/room/${roomId}`);
   };
 
@@ -584,14 +715,11 @@ function PlayerList() {
       <h2>Liste des joueurs</h2>
       <ul>
         {opponents &&
-          opponents
-            .map((opponent, playerId) => (
-              <li key={playerId}>
-                Joueur {playerId} - Score: {opponent.score}
-                {/* Vous pouvez afficher plus d'informations si nécessaire */}
-              </li>
-            ))
-            .toArray()}
+          opponents.valueSeq().map((opponent) => (
+            <li key={opponent.get("playerId")}>
+              {opponent.get("name")} - Score: {opponent.get("score")}
+            </li>
+          ))}
       </ul>
     </div>
   );
@@ -632,6 +760,45 @@ export default PlayerList;
 .player-list li:last-child {
   border-bottom: none;
 }
+-e 
+
+==== ./src/components/PlayerNameInput.js ====
+// ./src/components/PlayerNameInput.js
+
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+function PlayerNameInput({ onNameSet }) {
+  // Accepter onNameSet en tant que prop
+  const [name, setName] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (name.trim()) {
+      // Appeler onNameSet pour mettre à jour le nom du joueur
+      onNameSet(name.trim());
+      navigate("/"); // Rediriger vers la page d'accueil
+    }
+  };
+
+  return (
+    <div className="player-name-input">
+      <h2>Entrez votre nom :</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Votre nom"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <button type="submit">Valider</button>
+      </form>
+    </div>
+  );
+}
+
+export default PlayerNameInput;
 -e 
 
 ==== ./src/components/gameGrid/GameGrid.css ====
@@ -748,26 +915,52 @@ export default reportWebVitals;
 ==== ./src/App.js ====
 // ./src/App.js
 
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import GameRoom from "./pages/GameRoom";
 import { useSelector } from "react-redux";
+import PlayerNameInput from "./components/PlayerNameInput"; // Importer le nouveau composant
+import SoloGame from "./pages/SoloGame"; // Ajouter cette ligne dans App.js
+import { useState } from "react";
 
 function App() {
   // Utilisation de Redux pour afficher le message de test
   const message = useSelector((state) => state.test.get("message"));
   const score = useSelector((state) => state.game.get("score"));
 
+  // Vérifier si le nom du joueur est défini
+  const [playerName, setPlayerName] = useState(
+    localStorage.getItem("playerName")
+  );
+
+  const handleNameSet = (name) => {
+    localStorage.setItem("playerName", name);
+    setPlayerName(name);
+  };
+
   return (
     <div className="App">
-      <h1>{message}</h1>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/room/:roomId" element={<GameRoom />} />
+        {/* Route pour entrer le nom du joueur */}
+        <Route
+          path="/enter-name"
+          element={<PlayerNameInput onNameSet={handleNameSet} />}
+        />
+
+        {/* Si le nom du joueur est défini, afficher les autres routes */}
+        {playerName ? (
+          <>
+            <Route path="/" element={<Home />} />
+            <Route path="/solo" element={<SoloGame />} />
+            <Route path="/room/:roomId" element={<GameRoom />} />
+            {/* Rediriger toute autre route vers la page d'accueil */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        ) : (
+          /* Si le nom du joueur n'est pas défini, rediriger vers /enter-name */
+          <Route path="*" element={<Navigate to="/enter-name" replace />} />
+        )}
       </Routes>
-      <div className="score-display">
-        <h2>Score: {score}</h2>
-      </div>
     </div>
   );
 }
@@ -823,18 +1016,32 @@ io.on("connection", (socket) => {
   handleGameEvents(socket, io); // Gérer les événements du jeu pour ce socket
 });
 
+// Fonction pour calculer le score en fonction des lignes supprimées
+function computeScore(linesCleared) {
+  switch (linesCleared) {
+    case 1:
+      return 40;
+    case 2:
+      return 100;
+    case 3:
+      return 300;
+    case 4:
+      return 1200; // Tetris !
+    default:
+      return 0;
+  }
+}
+
 // Boucle de jeu principale
 setInterval(() => {
-  // Vérifie si `rooms` est défini
   if (!rooms) {
     console.error("Erreur : `rooms` n'est pas défini !");
     return;
   }
 
-  // Pour chaque room
   Object.keys(rooms).forEach((roomId) => {
     const room = rooms[roomId];
-    if (room.status !== "in-progress") return; // Ne traiter que les salles en cours
+    if (room.status !== "in-progress") return;
 
     room.players.forEach((playerId) => {
       const player = players[playerId];
@@ -843,16 +1050,34 @@ setInterval(() => {
         if (newPiece) {
           player.currentPiece = newPiece;
         } else {
-          // Empiler la pièce sur la grille
           player.grid = stackPiece(player.grid, player.currentPiece);
           player.currentPiece = generateRandomPiece();
-          // Vérifier et supprimer les lignes complètes
-          player.grid = clearCompleteLines(player.grid);
+
+          // Supprimer les lignes complètes
+          const { grid: newGrid, linesCleared } = clearCompleteLines(
+            player.grid
+          );
+          player.grid = newGrid;
+
           // Mettre à jour le score
-          player.score += 100;
+          const scoreIncrement = computeScore(linesCleared);
+          player.score += scoreIncrement;
         }
+
         // Émettre l'état du jeu mis à jour uniquement au joueur concerné
-        io.to(playerId).emit("gameState", player);
+        io.to(playerId).emit("gameState", {
+          roomId: player.roomId,
+          grid: player.grid,
+          currentPiece: player.currentPiece,
+          score: player.score,
+          mode: player.mode,
+        });
+
+        // Envoyer une mise à jour aux autres joueurs de la room
+        io.to(player.roomId).emit("opponentUpdate", {
+          playerId: playerId,
+          score: player.score,
+        });
       }
     });
   });
@@ -1126,12 +1351,22 @@ function stackPiece(grid, piece) {
 
 // Supprime les lignes complètes et renvoie la nouvelle grille
 function clearCompleteLines(grid) {
-  const newGrid = grid.filter((row) => row.some((cell) => cell === 0));
-  const linesCleared = GRID_HEIGHT - newGrid.length;
+  let linesCleared = 0;
+  const newGrid = grid.filter((row) => {
+    const isComplete = row.every((cell) => cell === 1);
+    if (isComplete) {
+      linesCleared += 1;
+      return false; // Exclure la ligne complète
+    }
+    return true; // Garder la ligne incomplète
+  });
   const emptyLines = Array(linesCleared)
     .fill(0)
     .map(() => Array(GRID_WIDTH).fill(0));
-  return emptyLines.concat(newGrid);
+  return {
+    grid: emptyLines.concat(newGrid),
+    linesCleared,
+  };
 }
 
 module.exports = {
@@ -1160,10 +1395,16 @@ const players = {};
  * @param {string} roomId - ID de la room
  * @param {string} mode - Mode de jeu ('solo' ou 'multiplayer')
  */
-function addPlayer(playerId, roomId, mode = "multiplayer") {
+function addPlayer(
+  playerId,
+  roomId,
+  mode = "multiplayer",
+  playerName = "Anonyme"
+) {
   players[playerId] = {
     roomId,
     mode, // Mode de jeu
+    name: playerName, // Ajouter le nom du joueur
     grid: Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(0)), // Initialise une grille vide
     currentPiece: generateRandomPiece(), // Assigne une pièce aléatoire
     score: 0,
@@ -1198,15 +1439,31 @@ const {
   rooms,
 } = require("../game/roomManager");
 
+// Fonction pour calculer le score en fonction des lignes supprimées
+function computeScore(linesCleared) {
+  switch (linesCleared) {
+    case 1:
+      return 40;
+    case 2:
+      return 100;
+    case 3:
+      return 300;
+    case 4:
+      return 1200; // Tetris !
+    default:
+      return 0;
+  }
+}
+
 function handleGameEvents(socket, io) {
   // Lorsqu'un joueur rejoint
-  socket.on("joinGame", ({ mode, roomId }) => {
+  socket.on("joinGame", ({ mode, roomId, playerName }) => {
     if (mode === "solo") {
       // Créer une salle unique pour le mode solo
       const soloRoomId = createRoom(socket.id);
       startRoom(soloRoomId, true); // Forcer le démarrage en solo
       socket.join(soloRoomId);
-      addPlayer(socket.id, soloRoomId, "solo"); // Passer le mode
+      addPlayer(socket.id, soloRoomId, "solo", playerName); // Passer le mode
       io.to(socket.id).emit("roomCreated", { roomId: soloRoomId });
       io.to(socket.id).emit("gameState", {
         roomId: soloRoomId,
@@ -1215,6 +1472,9 @@ function handleGameEvents(socket, io) {
         score: players[socket.id].score,
         mode: players[socket.id].mode,
       });
+      // Après avoir émis 'gameState' pour le mode solo
+      io.to(socket.id).emit("gameStarted", { roomId: soloRoomId });
+
       console.log(`Room solo créée: ${soloRoomId} par ${socket.id}`);
     } else if (mode === "multiplayer") {
       if (roomId) {
@@ -1222,12 +1482,19 @@ function handleGameEvents(socket, io) {
         const success = joinRoom(roomId, socket.id);
         if (success) {
           socket.join(roomId);
-          addPlayer(socket.id, roomId, "multiplayer"); // Passer le mode
+          addPlayer(socket.id, roomId, "multiplayer", playerName); // Passer le mode
           io.to(rooms[roomId].host).emit("roomJoined", {
             roomId,
             players: rooms[roomId].players.length,
           });
           console.log(`Joueur ${socket.id} a rejoint la room ${roomId}`);
+          // Informer les autres joueurs de la room de l'arrivée du nouveau joueur
+          socket.broadcast.to(roomId).emit("opponentUpdate", {
+            playerId: socket.id,
+            name: player.name,
+            score: players[socket.id].score,
+            // Vous pouvez ajouter d'autres informations comme le nom si vous l'avez
+          });
           // Si la salle atteint le nombre de joueurs requis (2), démarrer la partie
           if (rooms[roomId].players.length >= 2) {
             startRoom(roomId);
@@ -1242,6 +1509,17 @@ function handleGameEvents(socket, io) {
                 score: players[playerId].score,
                 mode: players[playerId].mode,
               });
+              // Envoyer les informations sur les adversaires
+              const opponents = rooms[roomId].players
+                .filter((id) => id !== playerId)
+                .map((id) => ({
+                  playerId: id,
+                  name: players[id].name,
+                  score: players[id].score,
+                  // Vous pouvez ajouter d'autres informations comme le nom si vous l'avez
+                }));
+
+              io.to(playerId).emit("initialOpponents", opponents);
             });
           }
         } else {
@@ -1256,7 +1534,7 @@ function handleGameEvents(socket, io) {
         // Créer une nouvelle salle multijoueur
         const newRoomId = createRoom(socket.id);
         socket.join(newRoomId);
-        addPlayer(socket.id, newRoomId, "multiplayer"); // Passer le mode
+        addPlayer(socket.id, newRoomId, "multiplayer", playerName); // Passer le mode
         io.to(socket.id).emit("roomCreated", { roomId: newRoomId });
         console.log(
           `Nouvelle room multijoueur créée: ${newRoomId} par ${socket.id}`
@@ -1276,10 +1554,13 @@ function handleGameEvents(socket, io) {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
         player.currentPiece = generateRandomPiece();
-        // Vérifier et supprimer les lignes complètes
-        player.grid = clearCompleteLines(player.grid);
-        // Mettre à jour le score
-        player.score += 100;
+        // Supprimer les lignes complètes
+        const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);
+        player.grid = newGrid;
+
+        // Mettre à jour le score en fonction des lignes supprimées
+        const scoreIncrement = computeScore(linesCleared);
+        player.score += scoreIncrement;
       }
       io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
@@ -1292,6 +1573,7 @@ function handleGameEvents(socket, io) {
       // Envoyer une mise à jour aux autres joueurs de la room
       socket.broadcast.to(player.roomId).emit("opponentUpdate", {
         playerId: socket.id,
+        name: player.name, // Inclure le nom
         score: player.score,
         // Tu peux inclure une version simplifiée de la grille si nécessaire
       });
@@ -1315,6 +1597,7 @@ function handleGameEvents(socket, io) {
       // Envoyer une mise à jour aux autres joueurs de la room
       socket.broadcast.to(player.roomId).emit("opponentUpdate", {
         playerId: socket.id,
+        name: player.name, // Inclure le nom
         score: player.score,
         // Tu peux inclure une version simplifiée de la grille si nécessaire
       });
@@ -1332,10 +1615,13 @@ function handleGameEvents(socket, io) {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
         player.currentPiece = generateRandomPiece();
-        // Vérifier et supprimer les lignes complètes
-        player.grid = clearCompleteLines(player.grid);
-        // Mettre à jour le score
-        player.score += 100;
+        // Supprimer les lignes complètes
+        const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);
+        player.grid = newGrid;
+
+        // Mettre à jour le score en fonction des lignes supprimées
+        const scoreIncrement = computeScore(linesCleared);
+        player.score += scoreIncrement;
       }
       io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
@@ -1348,6 +1634,7 @@ function handleGameEvents(socket, io) {
       // Envoyer une mise à jour aux autres joueurs de la room
       socket.broadcast.to(player.roomId).emit("opponentUpdate", {
         playerId: socket.id,
+        name: player.name, // Inclure le nom
         score: player.score,
       });
     }

@@ -11,6 +11,7 @@ function Home() {
   const [mode, setMode] = useState(null);
   const [rooms, setRooms] = useState([]);
   const navigate = useNavigate();
+  const playerName = localStorage.getItem("playerName");
 
   useEffect(() => {
     if (mode === "multiplayer") {
@@ -46,9 +47,9 @@ function Home() {
     setMode(selectedMode);
     if (selectedMode === "solo") {
       // Émettre l'événement pour rejoindre en solo
-      socket.emit("joinGame", { mode: "solo" });
+      socket.emit("joinGame", { mode: "solo", playerName });
+      navigate("/solo"); // Naviguer vers la page solo
     } else if (selectedMode === "multiplayer") {
-      // Émettre l'événement pour rejoindre en multijoueur
       // La liste des rooms sera demandée via l'effet précédent
     }
   };
