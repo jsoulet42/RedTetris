@@ -1,11 +1,10 @@
-// ./src/components/gameGrid/GameGrid.js
+// ./src/components/GameGrid/GameGrid.js
 
 import React from "react";
-import { useSelector } from "react-redux"; // Assurez-vous que cette ligne est présente et correcte
-import "./GameGrid.css";
+import { useSelector } from "react-redux";
+import "./GameGrid.css"; // Assurez-vous que le chemin est correct
 
 function GameGrid() {
-  // Récupérer la grille et la pièce actuelle depuis Redux
   const grid = useSelector((state) => state.game.get("grid"));
   const currentPiece = useSelector((state) => state.game.get("currentPiece"));
 

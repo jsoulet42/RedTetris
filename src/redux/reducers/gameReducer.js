@@ -36,6 +36,8 @@ function gameReducer(state = initialState, action) {
         ["opponents", action.payload.playerId],
         Map(action.payload)
       );
+    case "RESET_GAME_STATE":
+      return initialState;
     default:
       return state;
   }

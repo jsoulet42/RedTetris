@@ -5,18 +5,41 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
+}
+
+.home-page h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px var(--accent-color);
 }
 
 .mode-selection,
 .multiplayer-options {
-  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .mode-selection button,
 .multiplayer-options button {
-  margin: 10px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  cursor: pointer;
+  margin: 10px 0;
+  width: 200px;
+  font-size: 1.2rem;
+  background: linear-gradient(
+    45deg,
+    var(--accent-color),
+    var(--secondary-accent)
+  );
+  box-shadow: 0 0 15px var(--accent-color);
+  color: var(--text-color);
+  border-radius: 5px;
+}
+
+.mode-selection button:hover,
+.multiplayer-options button:hover {
+  box-shadow: 0 0 20px var(--accent-color);
 }

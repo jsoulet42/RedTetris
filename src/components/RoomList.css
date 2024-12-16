@@ -1,7 +1,17 @@
-/* ./src/components/RoomList.css */
+/* ./src/components/RoomList/RoomList.css */
 
 .room-list {
   margin-top: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.room-list h2 {
+  font-size: 1.5rem;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  text-align: center;
+  text-shadow: 0 0 5px var(--accent-color);
 }
 
 .room-list ul {
@@ -11,12 +21,36 @@
 
 .room-list li {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
   margin-bottom: 10px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  box-shadow: 0 0 5px var(--accent-color);
 }
 
 .room-list button {
+  margin-top: 10px;
   padding: 5px 10px;
+  background: linear-gradient(
+    45deg,
+    var(--accent-color),
+    var(--secondary-accent)
+  );
+  color: var(--text-color);
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.room-list button:hover {
+  background: linear-gradient(
+    45deg,
+    var(--secondary-accent),
+    var(--accent-color)
+  );
+  transform: scale(1.05);
 }

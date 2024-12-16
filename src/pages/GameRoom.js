@@ -1,24 +1,27 @@
-// ./src/pages/GameRoom.js
+// ./src/pages/GameRoom/GameRoom.js
 
 import React, { useEffect, useRef } from "react";
-import { useParams, useLocation } from "react-router-dom"; // Ajouter useLocation ici
+import { useParams, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import GameGrid from "../components/gameGrid/GameGrid";
 import PlayerList from "../components/playerList/PlayerList";
 import socket from "../socket";
-import { updateGameState } from "../redux/actions/gameActions";
+import { updateGameState, resetGameState } from "../redux/actions/gameActions";
 import "./GameRoom.css";
-import PlayerNameInput from "../components/PlayerNameInput";
+import { useNavigate } from "react-router-dom";
+import OpponentGrid from "../components/opponentGrid/OpponentGrid";
 
 function GameRoom() {
   const { roomId } = useParams();
-  const location = useLocation(); // Obtenir l'état de navigation
+  const location = useLocation();
   const gameRoomRef = useRef(null);
   const score = useSelector((state) => state.game.get("score"));
   const mode = useSelector((state) => state.game.get("mode"));
   const dispatch = useDispatch();
   const gameStarted = useSelector((state) => state.game.get("gameStarted"));
   const playerName = localStorage.getItem("playerName");
+  const navigate = useNavigate();
+  const opponents = useSelector((state) => state.game.get("opponents"));
 
   useEffect(() => {
     if (!mode) return;
@@ -60,14 +63,12 @@ function GameRoom() {
       }
     };
 
-    // Attacher l'écouteur d'événements clavier au conteneur de GameRoom
     const currentRef = gameRoomRef.current;
     if (currentRef) {
       currentRef.addEventListener("keydown", handleKeyDown);
       currentRef.focus();
     }
 
-    // Nettoyage
     return () => {
       if (currentRef) {
         currentRef.removeEventListener("keydown", handleKeyDown);
@@ -75,26 +76,42 @@ function GameRoom() {
     };
   }, []);
 
+  const handleQuit = () => {
+    socket.emit("leaveRoom", { roomId });
+    navigate("/");
+  };
+
   return (
-    <div
-      className="game-room"
-      ref={gameRoomRef}
-      tabIndex="0"
-      style={{ outline: "none" }}
-    >
+    <div className="game-room" ref={gameRoomRef} tabIndex="0">
       <h1>Salle de Jeu - {roomId}</h1>
       <h2>Joueur : {playerName}</h2>
       {gameStarted || mode === "solo" ? (
-        <>
-          <GameGrid />
-          {mode === "multiplayer" && <PlayerList />}
-          <div className="score-board">
-            <h2>Score: {score}</h2>
+        <div className="game-content">
+          <div className="game-grid-container">
+            <GameGrid />
           </div>
-        </>
+          {mode === "multiplayer" && (
+            <div className="opponents-container">
+              {opponents &&
+                opponents.valueSeq().map((opponent) => (
+                  <div key={opponent.get("playerId")}>
+                    <h3>{opponent.get("name")}</h3>
+                    <OpponentGrid grid={opponent.get("grid")} />
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
       ) : (
         <p>En attente d'autres joueurs...</p>
       )}
+      {mode === "multiplayer" && <PlayerList />}
+      <div className="score-board">
+        <h2>Score: {score}</h2>
+      </div>
+      <button className="quit-button" onClick={handleQuit}>
+        Quitter la partie
+      </button>
     </div>
   );
 }

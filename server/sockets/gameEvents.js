@@ -35,13 +35,23 @@ function computeScore(linesCleared) {
 }
 
 function handleGameEvents(socket, io) {
+  // Gestion de l'événement 'getAvailableRooms'
   socket.on("getAvailableRooms", () => {
     const availableRooms = getAvailableRooms();
     socket.emit("availableRooms", availableRooms);
   });
 
-  // Lorsqu'un joueur rejoint
+  // Gestion de l'événement 'joinGame'
   socket.on("joinGame", ({ mode, roomId, playerName }) => {
+    const existingPlayer = players[socket.id];
+    if (existingPlayer && existingPlayer.mode === mode) {
+      // Le joueur est déjà dans une room du même mode, éviter la duplication
+      console.log(
+        `Le joueur ${socket.id} est déjà dans une room de mode ${mode}`
+      );
+      return;
+    }
+
     if (mode === "solo") {
       // Créer une salle unique pour le mode solo
       const soloRoomId = createRoom(socket.id);
@@ -72,13 +82,19 @@ function handleGameEvents(socket, io) {
             players: rooms[roomId].players.length,
           });
           console.log(`Joueur ${socket.id} a rejoint la room ${roomId}`);
+
+          // Notifier tous les clients connectés des rooms disponibles
+          const availableRooms = getAvailableRooms();
+          io.emit("availableRooms", availableRooms);
+
           // Informer les autres joueurs de la room de l'arrivée du nouveau joueur
           socket.broadcast.to(roomId).emit("opponentUpdate", {
             playerId: socket.id,
             name: players[socket.id].name,
             score: players[socket.id].score,
-            // Vous pouvez ajouter d'autres informations comme le nom si vous l'avez
+            grid: players[socket.id].grid,
           });
+
           // Si la salle atteint le nombre de joueurs requis (2), démarrer la partie
           if (rooms[roomId].players.length >= 2) {
             startRoom(roomId);
@@ -100,7 +116,7 @@ function handleGameEvents(socket, io) {
                   playerId: id,
                   name: players[id].name,
                   score: players[id].score,
-                  // Vous pouvez ajouter d'autres informations comme le nom si vous l'avez
+                  grid: players[id].grid, // Inclure la grille de l'adversaire
                 }));
 
               io.to(playerId).emit("initialOpponents", opponents);
@@ -128,6 +144,21 @@ function handleGameEvents(socket, io) {
         io.emit("availableRooms", availableRooms);
       }
     }
+  });
+
+  // Gestion de l'événement 'leaveRoom' pour tous les modes
+  socket.on("leaveRoom", ({ roomId }) => {
+    leaveRoom(roomId, socket.id);
+    socket.leave(roomId);
+    removePlayer(socket.id);
+    console.log(`Joueur ${socket.id} a quitté la room ${roomId}`);
+
+    // Mettre à jour la liste des rooms disponibles
+    const availableRooms = getAvailableRooms();
+    io.emit("availableRooms", availableRooms); // Notifier tous les clients
+
+    // Informer les autres joueurs de la salle
+    io.to(roomId).emit("playerLeft", { playerId: socket.id });
   });
 
   // Gérer les déplacements des pièces
@@ -162,7 +193,7 @@ function handleGameEvents(socket, io) {
         playerId: socket.id,
         name: players[socket.id].name, // Inclure le nom
         score: player.score,
-        // Tu peux inclure une version simplifiée de la grille si nécessaire
+        grid: players[socket.id].grid,
       });
     }
   });
@@ -186,7 +217,7 @@ function handleGameEvents(socket, io) {
         playerId: socket.id,
         name: players[socket.id].name, // Inclure le nom
         score: player.score,
-        // Tu peux inclure une version simplifiée de la grille si nécessaire
+        grid: players[socket.id].grid,
       });
     }
   });
@@ -221,8 +252,9 @@ function handleGameEvents(socket, io) {
       // Envoyer une mise à jour aux autres joueurs de la room
       socket.broadcast.to(player.roomId).emit("opponentUpdate", {
         playerId: socket.id,
-        name: players[socket.id].name, // Inclure le nom
+        name: players[socket.id].name,
         score: player.score,
+        grid: players[socket.id].grid,
       });
     }
   });

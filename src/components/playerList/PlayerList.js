@@ -1,8 +1,8 @@
-// ./src/components/playerList/PlayerList.js
+// ./src/components/PlayerList/PlayerList.js
 
 import React from "react";
 import { useSelector } from "react-redux";
-import "./PlayerList.css";
+import "./PlayerList.css"; // Assurez-vous que le chemin est correct
 
 function PlayerList() {
   const opponents = useSelector((state) => state.game.get("opponents"));
@@ -14,7 +14,8 @@ function PlayerList() {
         {opponents &&
           opponents.valueSeq().map((opponent) => (
             <li key={opponent.get("playerId")}>
-              {opponent.get("name")} - Score: {opponent.get("score")}
+              <span>{opponent.get("name")}</span>
+              <span>{opponent.get("score")}</span>
             </li>
           ))}
       </ul>

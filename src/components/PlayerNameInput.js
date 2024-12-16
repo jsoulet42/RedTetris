@@ -1,17 +1,16 @@
-// ./src/components/PlayerNameInput.js
+// ./src/components/PlayerNameInput/PlayerNameInput.js
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./PlayerNameInput.css"; // Assurez-vous que le chemin est correct
 
 function PlayerNameInput({ onNameSet }) {
-  // Accepter onNameSet en tant que prop
   const [name, setName] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (name.trim()) {
-      // Appeler onNameSet pour mettre à jour le nom du joueur
       onNameSet(name.trim());
       navigate("/"); // Rediriger vers la page d'accueil
     }
@@ -26,6 +25,7 @@ function PlayerNameInput({ onNameSet }) {
           placeholder="Votre nom"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          required
         />
         <button type="submit">Valider</button>
       </form>

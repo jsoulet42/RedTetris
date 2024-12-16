@@ -1,0 +1,61 @@
+/* ./src/components/PlayerNameInput/PlayerNameInput.css */
+
+.player-name-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
+}
+
+.player-name-input h2 {
+  font-size: 2rem;
+  color: var(--accent-color);
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px var(--accent-color);
+}
+
+.player-name-input form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.player-name-input input {
+  padding: 10px;
+  font-size: 1.1rem;
+  border: 2px solid var(--accent-color);
+  border-radius: 5px;
+  margin-bottom: 20px;
+  width: 300px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+
+.player-name-input input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.player-name-input button {
+  padding: 10px 20px;
+  font-size: 1.1rem;
+  background: linear-gradient(
+    45deg,
+    var(--accent-color),
+    var(--secondary-accent)
+  );
+  box-shadow: 0 0 15px var(--accent-color);
+  color: var(--text-color);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.player-name-input button:hover {
+  box-shadow: 0 0 20px var(--accent-color);
+  transform: scale(1.05);
+}

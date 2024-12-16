@@ -1,0 +1,18 @@
+/* ./src/styles/variables.css */
+
+:root {
+  /* Palette de Couleurs Futuriste */
+  --background-color: #0d0d0d; /* Noir profond */
+  --text-color: #ffffff; /* Blanc pur */
+  --accent-color: #00ffff; /* Cyan néon */
+  --secondary-accent: #ff00ff; /* Magenta néon */
+  --button-background: #1e1e1e; /* Gris foncé pour les boutons */
+  --button-text: #00ffff; /* Cyan pour le texte des boutons */
+  --grid-background: #1e1e1e; /* Gris foncé pour les grilles */
+  --cell-filled: #00ffff; /* Cyan pour les cellules remplies */
+  --cell-empty: #333333; /* Gris foncé pour les cellules vides */
+
+  /* Typographie Moderne */
+  --font-primary: "Orbitron", sans-serif; /* Police principale */
+  --font-secondary: "Roboto", sans-serif; /* Police secondaire */
+}

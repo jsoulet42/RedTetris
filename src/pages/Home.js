@@ -1,6 +1,6 @@
-// ./src/pages/Home.js
+// ./src/pages/Home/Home.js
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket";
 import "./Home.css";
@@ -8,30 +8,26 @@ import RoomList from "../components/RoomList";
 import CreateRoom from "../components/CreateRoom";
 
 function Home() {
-  const [mode, setMode] = useState(null);
-  const [rooms, setRooms] = useState([]);
+  const [mode, setMode] = React.useState(null);
+  const [rooms, setRooms] = React.useState([]);
   const navigate = useNavigate();
   const playerName = localStorage.getItem("playerName");
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (mode === "multiplayer") {
-      // Demander la liste des rooms disponibles
       socket.emit("getAvailableRooms");
     }
   }, [mode]);
 
-  useEffect(() => {
-    // Écouter les rooms disponibles
+  React.useEffect(() => {
     socket.on("availableRooms", (availableRooms) => {
       setRooms(availableRooms);
     });
 
-    // Écouter les créations de room
     socket.on("roomCreated", ({ roomId }) => {
-      navigate(`/room/${roomId}`, { state: { isCreator: true } }); // Passer isCreator: true
+      navigate(`/room/${roomId}`, { state: { isCreator: true } });
     });
 
-    // Écouter les erreurs
     socket.on("error", (message) => {
       alert(message);
     });
@@ -46,11 +42,7 @@ function Home() {
   const handleModeSelection = (selectedMode) => {
     setMode(selectedMode);
     if (selectedMode === "solo") {
-      // Émettre l'événement pour rejoindre en solo
-      socket.emit("joinGame", { mode: "solo", playerName });
-      navigate("/solo"); // Naviguer vers la page solo
-    } else if (selectedMode === "multiplayer") {
-      // La liste des rooms sera demandée via l'effet précédent
+      navigate("/solo");
     }
   };
 

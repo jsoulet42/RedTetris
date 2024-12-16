@@ -91,10 +91,24 @@ setInterval(() => {
           mode: player.mode,
         });
 
-        // Envoyer une mise à jour aux autres joueurs de la room
-        io.to(player.roomId).emit("opponentUpdate", {
+        // Fonction pour envoyer opponentUpdate aux autres joueurs de la room
+        function sendOpponentUpdateToOthers(io, roomId, senderId, data) {
+          const roomSockets = io.sockets.adapter.rooms.get(roomId);
+          if (roomSockets) {
+            roomSockets.forEach((socketId) => {
+              if (socketId !== senderId) {
+                io.to(socketId).emit("opponentUpdate", data);
+              }
+            });
+          }
+        }
+
+        // Utiliser la fonction dans la boucle de jeu
+        sendOpponentUpdateToOthers(io, player.roomId, playerId, {
           playerId: playerId,
+          name: player.name,
           score: player.score,
+          grid: player.grid,
         });
       }
     });

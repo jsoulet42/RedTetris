@@ -1,8 +1,9 @@
-// ./src/components/RoomList.js : Afficher les parties multijoueurs disponibles que les joueurs peuvent rejoindre.
+// ./src/components/RoomList/RoomList.js
 
 import React from "react";
 import socket from "../socket";
 import { useNavigate } from "react-router-dom";
+import "./RoomList.css"; // Assurez-vous que le chemin est correct
 
 function RoomList({ rooms }) {
   const navigate = useNavigate();

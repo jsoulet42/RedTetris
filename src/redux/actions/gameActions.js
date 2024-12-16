@@ -18,3 +18,7 @@ export const setOpponents = (opponents) => ({
   type: "SET_OPPONENTS",
   payload: opponents,
 });
+
+export const resetGameState = () => ({
+  type: "RESET_GAME_STATE",
+});

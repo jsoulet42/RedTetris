@@ -5,26 +5,37 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  outline: none;
-  background-color: #f0f0f0; /* Couleur de fond douce */
-  height: 100vh; /* Prendre toute la hauteur de l'écran */
+  height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
+  overflow: hidden;
 }
 
 .solo-game h1 {
-  font-size: 2rem;
-  color: #333;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px var(--accent-color);
 }
 
 .solo-game h2 {
-  font-size: 1.5rem;
-  color: #666;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
 }
 
 .score-board {
   margin-top: 20px;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
+  text-shadow: 0 0 5px var(--accent-color);
 }
 
-.game-grid {
-  margin-top: 20px;
+.quit-button {
+  margin-top: 10px;
+  background: linear-gradient(45deg, #ff4d4f, #ff7875);
+  box-shadow: 0 0 10px #ff4d4f;
+  color: #ffffff;
+}
+
+.quit-button:hover {
+  box-shadow: 0 0 15px #ff4d4f;
 }

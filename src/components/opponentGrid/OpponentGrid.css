@@ -1,4 +1,4 @@
-/* ./src/components/GameGrid/GameGrid.css */
+/* ./src/components/OpponentGrid/OpponentGrid.css */
 
 .game-grid {
   display: grid;
@@ -6,15 +6,16 @@
   grid-template-columns: repeat(10, 1fr);
   gap: 1px;
   background-color: var(--grid-background);
-  width: 200px;
-  height: 400px;
+  width: 80px; /* Taille réduite pour les miniatures */
+  height: 160px;
   border: 2px solid var(--accent-color);
-  box-shadow: 0 0 20px var(--accent-color);
-  transition: box-shadow 0.3s ease;
+  box-shadow: 0 0 10px var(--accent-color);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .game-grid:hover {
-  box-shadow: 0 0 30px var(--accent-color);
+  transform: scale(1.05);
+  box-shadow: 0 0 25px var(--accent-color);
 }
 
 .grid-row {

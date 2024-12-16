@@ -1,0 +1,79 @@
+/* ./src/styles/responsive.css */
+
+/* Petits écrans : Téléphones et tablettes */
+@media (max-width: 768px) {
+  .game-grid {
+    width: 90vw;
+    height: 60vh;
+  }
+
+  .game-room h1 {
+    font-size: 2rem;
+  }
+
+  .game-room h2 {
+    font-size: 1rem;
+  }
+
+  .room-list,
+  .player-list {
+    width: 150px;
+  }
+
+  .player-name-input input {
+    width: 250px;
+  }
+
+  button {
+    font-size: 1rem;
+    padding: 10px;
+  }
+}
+
+/* Moyens écrans : Tablettes et petits laptops */
+@media (min-width: 769px) and (max-width: 1365px) {
+  .game-grid {
+    width: 60vw;
+    height: 70vh;
+  }
+
+  h1,
+  h2 {
+    font-size: 2rem;
+  }
+
+  button {
+    font-size: 1.2rem;
+    padding: 12px;
+  }
+}
+
+/* Grands écrans : Laptops et écrans larges */
+@media (min-width: 1366px) {
+  .game-grid {
+    width: 20vw;
+    height: 80vh;
+    max-width: 500px;
+    max-height: 800px;
+  }
+
+  .game-room h1,
+  .solo-game h1 {
+    font-size: 3.5rem;
+  }
+
+  .game-room h2,
+  .solo-game h2 {
+    font-size: 2rem;
+  }
+
+  .quit-button {
+    padding: 15px 30px;
+    font-size: 1.5rem;
+  }
+
+  button {
+    font-size: 1.5rem;
+    padding: 15px;
+  }
+}

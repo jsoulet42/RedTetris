@@ -1,0 +1,25 @@
+/* ./src/components/CreateRoom/CreateRoom.css */
+
+.create-room {
+  margin: 10px 0;
+}
+
+.create-room button {
+  width: 220px;
+  padding: 10px;
+  font-size: 1.1rem;
+  background: linear-gradient(
+    45deg,
+    var(--accent-color),
+    var(--secondary-accent)
+  );
+  box-shadow: 0 0 15px var(--accent-color);
+  color: var(--text-color);
+  border-radius: 5px;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.create-room button:hover {
+  box-shadow: 0 0 20px var(--accent-color);
+  transform: scale(1.05);
+}

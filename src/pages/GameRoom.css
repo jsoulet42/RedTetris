@@ -5,9 +5,58 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  outline: none; /* Supprimer le contour de focus par défaut */
+  height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
+  overflow: hidden;
+}
+
+.game-room h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px var(--accent-color);
+}
+
+.game-room h2 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+.game-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.game-grid-container,
+.opponents-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.opponents-container {
+  max-width: 300px;
 }
 
 .score-board {
   margin-top: 20px;
+  font-size: 1.5rem;
+  text-shadow: 0 0 5px var(--accent-color);
+}
+
+.quit-button {
+  margin-top: 10px;
+  background: linear-gradient(45deg, #ff4d4f, #ff7875);
+  box-shadow: 0 0 10px #ff4d4f;
+  color: #ffffff;
+}
+
+.quit-button:hover {
+  box-shadow: 0 0 15px #ff4d4f;
 }

@@ -81,6 +81,10 @@ export const setOpponents = (opponents) => ({
   type: "SET_OPPONENTS",
   payload: opponents,
 });
+
+export const resetGameState = () => ({
+  type: "RESET_GAME_STATE",
+});
 -e 
 
 ==== ./src/redux/store.js ====
@@ -178,6 +182,8 @@ function gameReducer(state = initialState, action) {
         ["opponents", action.payload.playerId],
         Map(action.payload)
       );
+    case "RESET_GAME_STATE":
+      return initialState;
     default:
       return state;
   }
@@ -194,53 +200,67 @@ export default gameReducer;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  outline: none;
-  background-color: #f0f0f0; /* Couleur de fond douce */
-  height: 100vh; /* Prendre toute la hauteur de l'écran */
+  height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
+  overflow: hidden;
 }
 
 .solo-game h1 {
-  font-size: 2rem;
-  color: #333;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px var(--accent-color);
 }
 
 .solo-game h2 {
-  font-size: 1.5rem;
-  color: #666;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
 }
 
 .score-board {
   margin-top: 20px;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
+  text-shadow: 0 0 5px var(--accent-color);
 }
 
-.game-grid {
-  margin-top: 20px;
+.quit-button {
+  margin-top: 10px;
+  background: linear-gradient(45deg, #ff4d4f, #ff7875);
+  box-shadow: 0 0 10px #ff4d4f;
+  color: #ffffff;
+}
+
+.quit-button:hover {
+  box-shadow: 0 0 15px #ff4d4f;
 }
 -e 
 
 ==== ./src/pages/GameRoom.js ====
-// ./src/pages/GameRoom.js
+// ./src/pages/GameRoom/GameRoom.js
 
 import React, { useEffect, useRef } from "react";
-import { useParams, useLocation } from "react-router-dom"; // Ajouter useLocation ici
+import { useParams, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import GameGrid from "../components/gameGrid/GameGrid";
 import PlayerList from "../components/playerList/PlayerList";
 import socket from "../socket";
-import { updateGameState } from "../redux/actions/gameActions";
+import { updateGameState, resetGameState } from "../redux/actions/gameActions";
 import "./GameRoom.css";
-import PlayerNameInput from "../components/PlayerNameInput";
+import { useNavigate } from "react-router-dom";
+import OpponentGrid from "../components/opponentGrid/OpponentGrid";
 
 function GameRoom() {
   const { roomId } = useParams();
-  const location = useLocation(); // Obtenir l'état de navigation
+  const location = useLocation();
   const gameRoomRef = useRef(null);
   const score = useSelector((state) => state.game.get("score"));
   const mode = useSelector((state) => state.game.get("mode"));
   const dispatch = useDispatch();
   const gameStarted = useSelector((state) => state.game.get("gameStarted"));
   const playerName = localStorage.getItem("playerName");
+  const navigate = useNavigate();
+  const opponents = useSelector((state) => state.game.get("opponents"));
 
   useEffect(() => {
     if (!mode) return;
@@ -282,14 +302,12 @@ function GameRoom() {
       }
     };
 
-    // Attacher l'écouteur d'événements clavier au conteneur de GameRoom
     const currentRef = gameRoomRef.current;
     if (currentRef) {
       currentRef.addEventListener("keydown", handleKeyDown);
       currentRef.focus();
     }
 
-    // Nettoyage
     return () => {
       if (currentRef) {
         currentRef.removeEventListener("keydown", handleKeyDown);
@@ -297,26 +315,42 @@ function GameRoom() {
     };
   }, []);
 
+  const handleQuit = () => {
+    socket.emit("leaveRoom", { roomId });
+    navigate("/");
+  };
+
   return (
-    <div
-      className="game-room"
-      ref={gameRoomRef}
-      tabIndex="0"
-      style={{ outline: "none" }}
-    >
+    <div className="game-room" ref={gameRoomRef} tabIndex="0">
       <h1>Salle de Jeu - {roomId}</h1>
       <h2>Joueur : {playerName}</h2>
       {gameStarted || mode === "solo" ? (
-        <>
-          <GameGrid />
-          {mode === "multiplayer" && <PlayerList />}
-          <div className="score-board">
-            <h2>Score: {score}</h2>
+        <div className="game-content">
+          <div className="game-grid-container">
+            <GameGrid />
           </div>
-        </>
+          {mode === "multiplayer" && (
+            <div className="opponents-container">
+              {opponents &&
+                opponents.valueSeq().map((opponent) => (
+                  <div key={opponent.get("playerId")}>
+                    <h3>{opponent.get("name")}</h3>
+                    <OpponentGrid grid={opponent.get("grid")} />
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
       ) : (
         <p>En attente d'autres joueurs...</p>
       )}
+      {mode === "multiplayer" && <PlayerList />}
+      <div className="score-board">
+        <h2>Score: {score}</h2>
+      </div>
+      <button className="quit-button" onClick={handleQuit}>
+        Quitter la partie
+      </button>
     </div>
   );
 }
@@ -332,20 +366,43 @@ export default GameRoom;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
+}
+
+.home-page h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px var(--accent-color);
 }
 
 .mode-selection,
 .multiplayer-options {
-  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .mode-selection button,
 .multiplayer-options button {
-  margin: 10px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  cursor: pointer;
+  margin: 10px 0;
+  width: 200px;
+  font-size: 1.2rem;
+  background: linear-gradient(
+    45deg,
+    var(--accent-color),
+    var(--secondary-accent)
+  );
+  box-shadow: 0 0 15px var(--accent-color);
+  color: var(--text-color);
+  border-radius: 5px;
+}
+
+.mode-selection button:hover,
+.multiplayer-options button:hover {
+  box-shadow: 0 0 20px var(--accent-color);
 }
 -e 
 
@@ -357,18 +414,67 @@ export default GameRoom;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  outline: none; /* Supprimer le contour de focus par défaut */
+  height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
+  overflow: hidden;
+}
+
+.game-room h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px var(--accent-color);
+}
+
+.game-room h2 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+.game-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.game-grid-container,
+.opponents-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.opponents-container {
+  max-width: 300px;
 }
 
 .score-board {
   margin-top: 20px;
+  font-size: 1.5rem;
+  text-shadow: 0 0 5px var(--accent-color);
+}
+
+.quit-button {
+  margin-top: 10px;
+  background: linear-gradient(45deg, #ff4d4f, #ff7875);
+  box-shadow: 0 0 10px #ff4d4f;
+  color: #ffffff;
+}
+
+.quit-button:hover {
+  box-shadow: 0 0 15px #ff4d4f;
 }
 -e 
 
 ==== ./src/pages/Home.js ====
-// ./src/pages/Home.js
+// ./src/pages/Home/Home.js
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket";
 import "./Home.css";
@@ -376,30 +482,26 @@ import RoomList from "../components/RoomList";
 import CreateRoom from "../components/CreateRoom";
 
 function Home() {
-  const [mode, setMode] = useState(null);
-  const [rooms, setRooms] = useState([]);
+  const [mode, setMode] = React.useState(null);
+  const [rooms, setRooms] = React.useState([]);
   const navigate = useNavigate();
   const playerName = localStorage.getItem("playerName");
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (mode === "multiplayer") {
-      // Demander la liste des rooms disponibles
       socket.emit("getAvailableRooms");
     }
   }, [mode]);
 
-  useEffect(() => {
-    // Écouter les rooms disponibles
+  React.useEffect(() => {
     socket.on("availableRooms", (availableRooms) => {
       setRooms(availableRooms);
     });
 
-    // Écouter les créations de room
     socket.on("roomCreated", ({ roomId }) => {
-      navigate(`/room/${roomId}`, { state: { isCreator: true } }); // Passer isCreator: true
+      navigate(`/room/${roomId}`, { state: { isCreator: true } });
     });
 
-    // Écouter les erreurs
     socket.on("error", (message) => {
       alert(message);
     });
@@ -414,11 +516,7 @@ function Home() {
   const handleModeSelection = (selectedMode) => {
     setMode(selectedMode);
     if (selectedMode === "solo") {
-      // Émettre l'événement pour rejoindre en solo
-      socket.emit("joinGame", { mode: "solo", playerName });
-      navigate("/solo"); // Naviguer vers la page solo
-    } else if (selectedMode === "multiplayer") {
-      // La liste des rooms sera demandée via l'effet précédent
+      navigate("/solo");
     }
   };
 
@@ -449,23 +547,39 @@ export default Home;
 -e 
 
 ==== ./src/pages/SoloGame.js ====
-// ./src/pages/SoloGame.js
+// ./src/pages/SoloGame/SoloGame.js
 
-import React, { useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
+import React, { useEffect, useRef, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import GameGrid from "../components/gameGrid/GameGrid";
 import socket from "../socket";
+import { useNavigate } from "react-router-dom";
+import { resetGameState } from "../redux/actions/gameActions";
 import "./SoloGame.css";
 
 function SoloGame() {
   const gameRoomRef = useRef(null);
   const score = useSelector((state) => state.game.get("score"));
   const playerName = localStorage.getItem("playerName");
+  const [roomId, setRoomId] = useState(null);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [gameStateReceived, setGameStateReceived] = useState(false);
 
   useEffect(() => {
-    socket.emit("joinGame", { mode: "solo", playerName });
+    if (!gameStateReceived) {
+      socket.emit("joinGame", { mode: "solo", playerName });
+    }
 
-    // Gérer les contrôles du joueur
+    const handleGameState = (gameState) => {
+      if (gameState.roomId && !roomId) {
+        setRoomId(gameState.roomId);
+        setGameStateReceived(true);
+      }
+    };
+
+    socket.on("gameState", handleGameState);
+
     const handleKeyDown = (e) => {
       switch (e.key) {
         case "ArrowLeft":
@@ -498,22 +612,29 @@ function SoloGame() {
       if (currentRef) {
         currentRef.removeEventListener("keydown", handleKeyDown);
       }
+      socket.off("gameState", handleGameState);
     };
-  }, []);
+  }, [roomId, playerName, gameStateReceived]);
+
+  const handleQuit = () => {
+    if (roomId) {
+      socket.emit("leaveRoom", { roomId });
+    }
+    dispatch(resetGameState());
+    navigate("/");
+  };
 
   return (
-    <div
-      className="solo-game"
-      ref={gameRoomRef}
-      tabIndex="0"
-      style={{ outline: "none" }}
-    >
+    <div className="solo-game" ref={gameRoomRef} tabIndex="0">
       <h1>Partie Solo</h1>
       <h2>Joueur : {playerName}</h2>
       <GameGrid />
       <div className="score-board">
         <h2>Score: {score}</h2>
       </div>
+      <button className="quit-button" onClick={handleQuit}>
+        Quitter la partie
+      </button>
     </div>
   );
 }
@@ -600,28 +721,183 @@ import '@testing-library/jest-dom';
 -e 
 
 ==== ./src/app.css ====
-/* ./src/App.css : Styles pour l’application, notamment pour l’affichage du score. */
-.score-display {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background-color: rgba(255, 255, 255, 0.8);
-  padding: 10px;
+/* ./src/app.css */
+
+/* Importer les variables CSS */
+@import "./styles/variables.css";
+
+/* Styles globaux */
+body,
+html,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: var(--font-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* Empêche le défilement global */
+}
+
+.App {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-primary);
+  color: var(--accent-color);
+  text-shadow: 0 0 10px var(--accent-color);
+}
+
+button {
+  background-color: var(--button-background);
+  color: var(--button-text);
+  border: none;
+  padding: 10px 20px;
   border-radius: 5px;
+  cursor: pointer;
+  font-family: var(--font-secondary);
+  transition: background-color 0.3s ease, transform 0.2s ease,
+    box-shadow 0.3s ease;
+}
+
+button:hover {
+  background-color: var(--accent-color);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px var(--accent-color);
+}
+
+button:focus {
+  outline: 2px solid var(--accent-color);
+}
+
+/* Animations */
+@keyframes flicker {
+  0%,
+  19%,
+  21%,
+  23%,
+  25%,
+  54%,
+  56%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  24%,
+  55% {
+    opacity: 0.4;
+  }
+}
+
+h1,
+h2,
+h3 {
+  animation: flicker 3s infinite;
+}
+
+/* Media Queries pour Responsivité */
+@media (max-width: 1200px) {
+  .game-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .opponents-container {
+    max-width: 100%;
+    margin-top: 20px;
+  }
+
+  .game-grid,
+  .opponent-grid {
+    width: 150px;
+    height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-room h1 {
+    font-size: 2rem;
+  }
+
+  .game-room h2 {
+    font-size: 1rem;
+  }
+
+  .game-grid,
+  .opponent-grid {
+    width: 120px;
+    height: 240px;
+  }
+
+  .room-list,
+  .player-list {
+    width: 150px;
+  }
+
+  .player-name-input input {
+    width: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-grid,
+  .opponent-grid {
+    width: 100px;
+    height: 200px;
+  }
+
+  .room-list,
+  .player-list {
+    width: 120px;
+  }
+
+  .player-name-input input {
+    width: 200px;
+  }
+
+  .game-room h1 {
+    font-size: 1.5rem;
+  }
+
+  .game-room h2 {
+    font-size: 0.9rem;
+  }
+
+  .score-board {
+    font-size: 1.2rem;
+  }
 }
 -e 
 
 ==== ./src/components/CreateRoom.js ====
-// ./src/components/CreateRoom.js
+// ./src/components/CreateRoom/CreateRoom.js
 
 import React from "react";
 import socket from "../socket";
+import { useNavigate } from "react-router-dom";
+import "./CreateRoom.css"; // Assurez-vous que le chemin est correct
 
 function CreateRoom() {
+  const navigate = useNavigate();
   const playerName = localStorage.getItem("playerName");
 
   const handleCreateRoom = () => {
     socket.emit("joinGame", { mode: "multiplayer", playerName, create: true });
+    // L'écoute de l'événement "roomCreated" est gérée dans Home.js
   };
 
   return (
@@ -635,10 +911,20 @@ export default CreateRoom;
 -e 
 
 ==== ./src/components/RoomList.css ====
-/* ./src/components/RoomList.css */
+/* ./src/components/RoomList/RoomList.css */
 
 .room-list {
   margin-top: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.room-list h2 {
+  font-size: 1.5rem;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  text-align: center;
+  text-shadow: 0 0 5px var(--accent-color);
 }
 
 .room-list ul {
@@ -648,23 +934,209 @@ export default CreateRoom;
 
 .room-list li {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
   margin-bottom: 10px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  box-shadow: 0 0 5px var(--accent-color);
 }
 
 .room-list button {
+  margin-top: 10px;
   padding: 5px 10px;
+  background: linear-gradient(
+    45deg,
+    var(--accent-color),
+    var(--secondary-accent)
+  );
+  color: var(--text-color);
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.room-list button:hover {
+  background: linear-gradient(
+    45deg,
+    var(--secondary-accent),
+    var(--accent-color)
+  );
+  transform: scale(1.05);
 }
 -e 
 
+==== ./src/components/CreateRoom.css ====
+/* ./src/components/CreateRoom/CreateRoom.css */
+
+.create-room {
+  margin: 10px 0;
+}
+
+.create-room button {
+  width: 220px;
+  padding: 10px;
+  font-size: 1.1rem;
+  background: linear-gradient(
+    45deg,
+    var(--accent-color),
+    var(--secondary-accent)
+  );
+  box-shadow: 0 0 15px var(--accent-color);
+  color: var(--text-color);
+  border-radius: 5px;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.create-room button:hover {
+  box-shadow: 0 0 20px var(--accent-color);
+  transform: scale(1.05);
+}
+-e 
+
+==== ./src/components/PlayerNameInput.css ====
+/* ./src/components/PlayerNameInput/PlayerNameInput.css */
+
+.player-name-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
+}
+
+.player-name-input h2 {
+  font-size: 2rem;
+  color: var(--accent-color);
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px var(--accent-color);
+}
+
+.player-name-input form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.player-name-input input {
+  padding: 10px;
+  font-size: 1.1rem;
+  border: 2px solid var(--accent-color);
+  border-radius: 5px;
+  margin-bottom: 20px;
+  width: 300px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+
+.player-name-input input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.player-name-input button {
+  padding: 10px 20px;
+  font-size: 1.1rem;
+  background: linear-gradient(
+    45deg,
+    var(--accent-color),
+    var(--secondary-accent)
+  );
+  box-shadow: 0 0 15px var(--accent-color);
+  color: var(--text-color);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.player-name-input button:hover {
+  box-shadow: 0 0 20px var(--accent-color);
+  transform: scale(1.05);
+}
+-e 
+
+==== ./src/components/opponentGrid/OpponentGrid.css ====
+/* ./src/components/OpponentGrid/OpponentGrid.css */
+
+.game-grid {
+  display: grid;
+  grid-template-rows: repeat(20, 1fr);
+  grid-template-columns: repeat(10, 1fr);
+  gap: 1px;
+  background-color: var(--grid-background);
+  width: 80px; /* Taille réduite pour les miniatures */
+  height: 160px;
+  border: 2px solid var(--accent-color);
+  box-shadow: 0 0 10px var(--accent-color);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.game-grid:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 25px var(--accent-color);
+}
+
+.grid-row {
+  display: contents;
+}
+
+.grid-cell {
+  background-color: var(--cell-empty);
+  border: 1px solid #555;
+  width: 100%;
+  height: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.grid-cell.filled {
+  background-color: var(--cell-filled);
+}
+-e 
+
+==== ./src/components/opponentGrid/OpponentGrid.js ====
+// ./src/components/OpponentGrid/OpponentGrid.js
+
+import React from "react";
+import "./OpponentGrid.css"; // Assurez-vous que le chemin est correct
+
+function OpponentGrid({ grid }) {
+  console.log("Opponent grid received:", grid);
+  if (!grid || !Array.isArray(grid)) {
+    return <div className="game-grid">Chargement...</div>;
+  }
+
+  return (
+    <div className="game-grid">
+      {grid.map((row, rowIndex) => (
+        <div key={rowIndex} className="grid-row">
+          {row.map((cell, colIndex) => (
+            <div
+              key={colIndex}
+              className={`grid-cell ${cell ? "filled" : ""}`}
+            ></div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default OpponentGrid;
+-e 
+
 ==== ./src/components/RoomList.js ====
-// ./src/components/RoomList.js : Afficher les parties multijoueurs disponibles que les joueurs peuvent rejoindre.
+// ./src/components/RoomList/RoomList.js
 
 import React from "react";
 import socket from "../socket";
 import { useNavigate } from "react-router-dom";
+import "./RoomList.css"; // Assurez-vous que le chemin est correct
 
 function RoomList({ rooms }) {
   const navigate = useNavigate();
@@ -701,11 +1173,11 @@ export default RoomList;
 -e 
 
 ==== ./src/components/playerList/PlayerList.js ====
-// ./src/components/playerList/PlayerList.js
+// ./src/components/PlayerList/PlayerList.js
 
 import React from "react";
 import { useSelector } from "react-redux";
-import "./PlayerList.css";
+import "./PlayerList.css"; // Assurez-vous que le chemin est correct
 
 function PlayerList() {
   const opponents = useSelector((state) => state.game.get("opponents"));
@@ -717,7 +1189,8 @@ function PlayerList() {
         {opponents &&
           opponents.valueSeq().map((opponent) => (
             <li key={opponent.get("playerId")}>
-              {opponent.get("name")} - Score: {opponent.get("score")}
+              <span>{opponent.get("name")}</span>
+              <span>{opponent.get("score")}</span>
             </li>
           ))}
       </ul>
@@ -729,20 +1202,22 @@ export default PlayerList;
 -e 
 
 ==== ./src/components/playerList/PlayerList.css ====
-/* ./src/components/playerList/PlayerList.css */
+/* ./src/components/PlayerList/PlayerList.css */
+
 .player-list {
-  margin: 20px;
+  margin: 20px 0;
   padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background-color: #f9f9f9;
+  border: 2px solid var(--accent-color);
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
   width: 200px;
+  box-shadow: 0 0 10px var(--accent-color);
 }
 
 .player-list h2 {
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   margin-bottom: 10px;
-  color: #333;
+  color: var(--accent-color);
 }
 
 .player-list ul {
@@ -752,9 +1227,11 @@ export default PlayerList;
 
 .player-list li {
   padding: 8px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #555;
   font-size: 1rem;
-  color: #555;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
 }
 
 .player-list li:last-child {
@@ -763,20 +1240,19 @@ export default PlayerList;
 -e 
 
 ==== ./src/components/PlayerNameInput.js ====
-// ./src/components/PlayerNameInput.js
+// ./src/components/PlayerNameInput/PlayerNameInput.js
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./PlayerNameInput.css"; // Assurez-vous que le chemin est correct
 
 function PlayerNameInput({ onNameSet }) {
-  // Accepter onNameSet en tant que prop
   const [name, setName] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (name.trim()) {
-      // Appeler onNameSet pour mettre à jour le nom du joueur
       onNameSet(name.trim());
       navigate("/"); // Rediriger vers la page d'accueil
     }
@@ -791,6 +1267,7 @@ function PlayerNameInput({ onNameSet }) {
           placeholder="Votre nom"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          required
         />
         <button type="submit">Valider</button>
       </form>
@@ -802,16 +1279,23 @@ export default PlayerNameInput;
 -e 
 
 ==== ./src/components/gameGrid/GameGrid.css ====
-/* ./src/components/gameGrid/GameGrid.css */
+/* ./src/components/GameGrid/GameGrid.css */
+
 .game-grid {
   display: grid;
   grid-template-rows: repeat(20, 1fr);
   grid-template-columns: repeat(10, 1fr);
   gap: 1px;
-  background-color: #333;
+  background-color: var(--grid-background);
   width: 200px;
   height: 400px;
-  margin: auto;
+  border: 2px solid var(--accent-color);
+  box-shadow: 0 0 20px var(--accent-color);
+  transition: box-shadow 0.3s ease;
+}
+
+.game-grid:hover {
+  box-shadow: 0 0 30px var(--accent-color);
 }
 
 .grid-row {
@@ -819,26 +1303,26 @@ export default PlayerNameInput;
 }
 
 .grid-cell {
-  background-color: #fff;
-  border: 1px solid #ddd;
+  background-color: var(--cell-empty);
+  border: 1px solid #555;
   width: 100%;
   height: 100%;
+  transition: background-color 0.3s ease;
 }
 
 .grid-cell.filled {
-  background-color: #333; /* Couleur de remplissage pour les cellules occupées */
+  background-color: var(--cell-filled);
 }
 -e 
 
 ==== ./src/components/gameGrid/GameGrid.js ====
-// ./src/components/gameGrid/GameGrid.js
+// ./src/components/GameGrid/GameGrid.js
 
 import React from "react";
-import { useSelector } from "react-redux"; // Assurez-vous que cette ligne est présente et correcte
-import "./GameGrid.css";
+import { useSelector } from "react-redux";
+import "./GameGrid.css"; // Assurez-vous que le chemin est correct
 
 function GameGrid() {
-  // Récupérer la grille et la pièce actuelle depuis Redux
   const grid = useSelector((state) => state.game.get("grid"));
   const currentPiece = useSelector((state) => state.game.get("currentPiece"));
 
@@ -919,16 +1403,14 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import GameRoom from "./pages/GameRoom";
 import { useSelector } from "react-redux";
-import PlayerNameInput from "./components/PlayerNameInput"; // Importer le nouveau composant
-import SoloGame from "./pages/SoloGame"; // Ajouter cette ligne dans App.js
+import PlayerNameInput from "./components/PlayerNameInput";
+import SoloGame from "./pages/SoloGame";
 import { useState } from "react";
+import "./app.css"; // Importer les styles globaux
 
 function App() {
-  // Utilisation de Redux pour afficher le message de test
   const message = useSelector((state) => state.test.get("message"));
   const score = useSelector((state) => state.game.get("score"));
-
-  // Vérifier si le nom du joueur est défini
   const [playerName, setPlayerName] = useState(
     localStorage.getItem("playerName")
   );
@@ -941,23 +1423,18 @@ function App() {
   return (
     <div className="App">
       <Routes>
-        {/* Route pour entrer le nom du joueur */}
         <Route
           path="/enter-name"
           element={<PlayerNameInput onNameSet={handleNameSet} />}
         />
-
-        {/* Si le nom du joueur est défini, afficher les autres routes */}
         {playerName ? (
           <>
             <Route path="/" element={<Home />} />
             <Route path="/solo" element={<SoloGame />} />
             <Route path="/room/:roomId" element={<GameRoom />} />
-            {/* Rediriger toute autre route vers la page d'accueil */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         ) : (
-          /* Si le nom du joueur n'est pas défini, rediriger vers /enter-name */
           <Route path="*" element={<Navigate to="/enter-name" replace />} />
         )}
       </Routes>
@@ -966,6 +1443,27 @@ function App() {
 }
 
 export default App;
+-e 
+
+==== ./src/styles/variables.css ====
+/* ./src/styles/variables.css */
+
+:root {
+  /* Palette de Couleurs Futuriste */
+  --background-color: #0d0d0d; /* Noir profond */
+  --text-color: #ffffff; /* Blanc pur */
+  --accent-color: #00ffff; /* Cyan néon */
+  --secondary-accent: #ff00ff; /* Magenta néon */
+  --button-background: #1e1e1e; /* Gris foncé pour les boutons */
+  --button-text: #00ffff; /* Cyan pour le texte des boutons */
+  --grid-background: #1e1e1e; /* Gris foncé pour les grilles */
+  --cell-filled: #00ffff; /* Cyan pour les cellules remplies */
+  --cell-empty: #333333; /* Gris foncé pour les cellules vides */
+
+  /* Typographie Moderne */
+  --font-primary: "Orbitron", sans-serif; /* Police principale */
+  --font-secondary: "Roboto", sans-serif; /* Police secondaire */
+}
 -e 
 
 ==== ./src/App.test.js ====
@@ -1073,10 +1571,24 @@ setInterval(() => {
           mode: player.mode,
         });
 
-        // Envoyer une mise à jour aux autres joueurs de la room
-        io.to(player.roomId).emit("opponentUpdate", {
+        // Fonction pour envoyer opponentUpdate aux autres joueurs de la room
+        function sendOpponentUpdateToOthers(io, roomId, senderId, data) {
+          const roomSockets = io.sockets.adapter.rooms.get(roomId);
+          if (roomSockets) {
+            roomSockets.forEach((socketId) => {
+              if (socketId !== senderId) {
+                io.to(socketId).emit("opponentUpdate", data);
+              }
+            });
+          }
+        }
+
+        // Utiliser la fonction dans la boucle de jeu
+        sendOpponentUpdateToOthers(io, player.roomId, playerId, {
           playerId: playerId,
+          name: player.name,
           score: player.score,
+          grid: player.grid,
         });
       }
     });
@@ -1456,8 +1968,23 @@ function computeScore(linesCleared) {
 }
 
 function handleGameEvents(socket, io) {
-  // Lorsqu'un joueur rejoint
+  // Gestion de l'événement 'getAvailableRooms'
+  socket.on("getAvailableRooms", () => {
+    const availableRooms = getAvailableRooms();
+    socket.emit("availableRooms", availableRooms);
+  });
+
+  // Gestion de l'événement 'joinGame'
   socket.on("joinGame", ({ mode, roomId, playerName }) => {
+    const existingPlayer = players[socket.id];
+    if (existingPlayer && existingPlayer.mode === mode) {
+      // Le joueur est déjà dans une room du même mode, éviter la duplication
+      console.log(
+        `Le joueur ${socket.id} est déjà dans une room de mode ${mode}`
+      );
+      return;
+    }
+
     if (mode === "solo") {
       // Créer une salle unique pour le mode solo
       const soloRoomId = createRoom(socket.id);
@@ -1488,13 +2015,19 @@ function handleGameEvents(socket, io) {
             players: rooms[roomId].players.length,
           });
           console.log(`Joueur ${socket.id} a rejoint la room ${roomId}`);
+
+          // Notifier tous les clients connectés des rooms disponibles
+          const availableRooms = getAvailableRooms();
+          io.emit("availableRooms", availableRooms);
+
           // Informer les autres joueurs de la room de l'arrivée du nouveau joueur
           socket.broadcast.to(roomId).emit("opponentUpdate", {
             playerId: socket.id,
-            name: player.name,
+            name: players[socket.id].name,
             score: players[socket.id].score,
-            // Vous pouvez ajouter d'autres informations comme le nom si vous l'avez
+            grid: players[socket.id].grid,
           });
+
           // Si la salle atteint le nombre de joueurs requis (2), démarrer la partie
           if (rooms[roomId].players.length >= 2) {
             startRoom(roomId);
@@ -1516,7 +2049,7 @@ function handleGameEvents(socket, io) {
                   playerId: id,
                   name: players[id].name,
                   score: players[id].score,
-                  // Vous pouvez ajouter d'autres informations comme le nom si vous l'avez
+                  grid: players[id].grid, // Inclure la grille de l'adversaire
                 }));
 
               io.to(playerId).emit("initialOpponents", opponents);
@@ -1539,8 +2072,26 @@ function handleGameEvents(socket, io) {
         console.log(
           `Nouvelle room multijoueur créée: ${newRoomId} par ${socket.id}`
         );
+        // Émettre la liste mise à jour des rooms disponibles à tous les clients
+        const availableRooms = getAvailableRooms();
+        io.emit("availableRooms", availableRooms);
       }
     }
+  });
+
+  // Gestion de l'événement 'leaveRoom' pour tous les modes
+  socket.on("leaveRoom", ({ roomId }) => {
+    leaveRoom(roomId, socket.id);
+    socket.leave(roomId);
+    removePlayer(socket.id);
+    console.log(`Joueur ${socket.id} a quitté la room ${roomId}`);
+
+    // Mettre à jour la liste des rooms disponibles
+    const availableRooms = getAvailableRooms();
+    io.emit("availableRooms", availableRooms); // Notifier tous les clients
+
+    // Informer les autres joueurs de la salle
+    io.to(roomId).emit("playerLeft", { playerId: socket.id });
   });
 
   // Gérer les déplacements des pièces
@@ -1573,9 +2124,9 @@ function handleGameEvents(socket, io) {
       // Envoyer une mise à jour aux autres joueurs de la room
       socket.broadcast.to(player.roomId).emit("opponentUpdate", {
         playerId: socket.id,
-        name: player.name, // Inclure le nom
+        name: players[socket.id].name, // Inclure le nom
         score: player.score,
-        // Tu peux inclure une version simplifiée de la grille si nécessaire
+        grid: players[socket.id].grid,
       });
     }
   });
@@ -1597,9 +2148,9 @@ function handleGameEvents(socket, io) {
       // Envoyer une mise à jour aux autres joueurs de la room
       socket.broadcast.to(player.roomId).emit("opponentUpdate", {
         playerId: socket.id,
-        name: player.name, // Inclure le nom
+        name: players[socket.id].name, // Inclure le nom
         score: player.score,
-        // Tu peux inclure une version simplifiée de la grille si nécessaire
+        grid: players[socket.id].grid,
       });
     }
   });
@@ -1634,8 +2185,9 @@ function handleGameEvents(socket, io) {
       // Envoyer une mise à jour aux autres joueurs de la room
       socket.broadcast.to(player.roomId).emit("opponentUpdate", {
         playerId: socket.id,
-        name: player.name, // Inclure le nom
+        name: players[socket.id].name,
         score: player.score,
+        grid: players[socket.id].grid,
       });
     }
   });
@@ -1647,6 +2199,9 @@ function handleGameEvents(socket, io) {
       const roomId = player.roomId;
       leaveRoom(roomId, socket.id);
       removePlayer(socket.id);
+      // Après avoir supprimé le joueur et quitté la room
+      const availableRooms = getAvailableRooms();
+      io.emit("availableRooms", availableRooms);
       // Informer les autres joueurs de la salle
       io.to(roomId).emit("playerLeft", { playerId: socket.id });
       console.log(`Joueur ${socket.id} a quitté la room ${roomId}`);

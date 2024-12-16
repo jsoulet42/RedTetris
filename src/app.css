@@ -1,9 +1,82 @@
-/* ./src/App.css : Styles pour l’application, notamment pour l’affichage du score. */
-.score-display {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background-color: rgba(255, 255, 255, 0.8);
-  padding: 10px;
+/* ./src/app.css */
+
+/* Importer les variables CSS */
+@import "./styles/variables.css";
+@import "./styles/responsive.css";
+
+/* Styles globaux */
+body,
+html,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: var(--font-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* Empêche le défilement global */
+}
+
+.App {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-primary);
+  color: var(--accent-color);
+  text-shadow: 0 0 10px var(--accent-color);
+}
+
+button {
+  background-color: var(--button-background);
+  color: var(--button-text);
+  border: none;
+  padding: 10px 20px;
   border-radius: 5px;
+  cursor: pointer;
+  font-family: var(--font-secondary);
+  transition: background-color 0.3s ease, transform 0.2s ease,
+    box-shadow 0.3s ease;
+}
+
+button:hover {
+  background-color: var(--accent-color);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px var(--accent-color);
+}
+
+button:focus {
+  outline: 2px solid var(--accent-color);
+}
+
+/* Animations */
+@keyframes flicker {
+  0%,
+  50%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  80% {
+    opacity: 0.8; /* Réduction légère de l'opacité */
+  }
+}
+
+h1,
+h2,
+h3 {
+  animation: flicker 3s infinite;
 }
