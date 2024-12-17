@@ -11,4 +11,10 @@ socket.on("disconnect", (reason) => {
   console.log("Socket déconnecté :", reason);
 });
 
+socket.on("gameOver", ({ loserId, winnerId }) => {
+  console.log(
+    `DEBUG : gameOver reçu côté client. Loser: ${loserId}, Winner: ${winnerId}`
+  );
+});
+
 export default socket;

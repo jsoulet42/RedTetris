@@ -1,5 +1,7 @@
 // ./server/sockets/gameEvents.js
 
+const { isGameOver } = require("../game/gameLogic");
+
 const {
   movePiece,
   rotatePiece,
@@ -171,7 +173,25 @@ function handleGameEvents(socket, io) {
       } else {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
+        console.log("DEBUG : Grille après empilement :", player.grid);
+
+        if (isGameOver(player.grid)) {
+          console.log("DEBUG : Game Over détecté juste après empilement");
+          const room = rooms[player.roomId];
+          if (room) {
+            room.status = "finished";
+          }
+          io.to(player.roomId).emit("gameOver", {
+            loserId: socket.id,
+            winnerId: getWinnerId(player.roomId, socket.id),
+          });
+          return; // Important pour sortir et ne plus continuer l'exécution
+        } else {
+          console.log("DEBUG : Pas de game over après empilement");
+        }
+
         player.currentPiece = generateRandomPiece();
+
         // Supprimer les lignes complètes
         const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);
         player.grid = newGrid;
@@ -232,6 +252,19 @@ function handleGameEvents(socket, io) {
       } else {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
+        console.log("DEBUG : Grille après empilement :", player.grid);
+
+        if (isGameOver(player.grid)) {
+          console.log("DEBUG : Game Over détecté juste après empilement");
+          io.to(player.roomId).emit("gameOver", {
+            loserId: socket.id,
+            winnerId: getWinnerId(player.roomId, socket.id),
+          });
+          return; // Important pour sortir et ne plus continuer l'exécution
+        } else {
+          console.log("DEBUG : Pas de game over après empilement");
+        }
+
         player.currentPiece = generateRandomPiece();
         // Supprimer les lignes complètes
         const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);
@@ -275,6 +308,14 @@ function handleGameEvents(socket, io) {
     }
     console.log("Joueur déconnecté :", socket.id);
   });
+}
+
+function getWinnerId(roomId, loserId) {
+  const room = rooms[roomId];
+  if (room) {
+    return room.players.find((playerId) => playerId !== loserId); // Retourne l'autre joueur
+  }
+  return null; // S'il n'y a pas d'autre joueur
 }
 
 module.exports = handleGameEvents;

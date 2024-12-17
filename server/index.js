@@ -6,6 +6,7 @@ const { Server } = require("socket.io");
 const handleGameEvents = require("./sockets/gameEvents");
 const { players } = require("./game/playerManager");
 const { rooms } = require("./game/roomManager");
+const { isGameOver } = require("../server/game/gameLogic");
 
 const {
   movePiece,
@@ -50,6 +51,14 @@ function computeScore(linesCleared) {
   }
 }
 
+function getWinnerId(roomId, loserId) {
+  const room = rooms[roomId];
+  if (room) {
+    return room.players.find((playerId) => playerId !== loserId);
+  }
+  return null; // S'il n'y a pas d'autre joueur
+}
+
 // Boucle de jeu principale
 setInterval(() => {
   if (!rooms) {
@@ -59,7 +68,9 @@ setInterval(() => {
 
   Object.keys(rooms).forEach((roomId) => {
     const room = rooms[roomId];
-    if (room.status !== "in-progress") return;
+    if (room.status !== "in-progress") {
+      return; // On ne traite pas cette room si elle n'est pas en cours de jeu
+    }
 
     room.players.forEach((playerId) => {
       const player = players[playerId];
@@ -70,6 +81,29 @@ setInterval(() => {
         } else {
           player.grid = stackPiece(player.grid, player.currentPiece);
           player.currentPiece = generateRandomPiece();
+          console.log(
+            "DEBUG : Grille après empilement dans la boucle principale:",
+            player.grid
+          );
+
+          if (isGameOver(player.grid)) {
+            console.log(
+              "DEBUG : Game Over détecté dans la boucle principale du serveur."
+            );
+            const room = rooms[player.roomId];
+            if (room) {
+              room.status = "finished";
+            }
+            io.to(player.roomId).emit("gameOver", {
+              loserId: playerId,
+              winnerId: getWinnerId(player.roomId, playerId),
+            });
+            return; // Importante pour stopper la logique supplémentaire
+          } else {
+            console.log(
+              "DEBUG : Pas de game over après empilement dans la boucle principale."
+            );
+          }
 
           // Supprimer les lignes complètes
           const { grid: newGrid, linesCleared } = clearCompleteLines(

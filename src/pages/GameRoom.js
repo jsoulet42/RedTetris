@@ -1,6 +1,6 @@
 // ./src/pages/GameRoom/GameRoom.js
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import GameGrid from "../components/gameGrid/GameGrid";
@@ -10,6 +10,7 @@ import { updateGameState, resetGameState } from "../redux/actions/gameActions";
 import "./GameRoom.css";
 import { useNavigate } from "react-router-dom";
 import OpponentGrid from "../components/opponentGrid/OpponentGrid";
+import GameOverMessage from "../components/GameOverMessage"; // Import ajouté
 
 function GameRoom() {
   const { roomId } = useParams();
@@ -22,6 +23,9 @@ function GameRoom() {
   const playerName = localStorage.getItem("playerName");
   const navigate = useNavigate();
   const opponents = useSelector((state) => state.game.get("opponents"));
+  const [winnerId, setWinnerId] = useState(null);
+
+  const [gameOverMessage, setGameOverMessage] = useState(null); // Ajout de l'état pour la fin de partie
 
   useEffect(() => {
     if (!mode) return;
@@ -76,6 +80,22 @@ function GameRoom() {
     };
   }, []);
 
+  // Écouter l'événement de fin de partie
+  useEffect(() => {
+    socket.on("gameOver", ({ loserId, winnerId }) => {
+      setWinnerId(winnerId);
+      if (socket.id === loserId) {
+        setGameOverMessage("Défaite : Vous avez perdu !");
+      } else if (socket.id === winnerId) {
+        setGameOverMessage("Victoire : Vous avez gagné !");
+      }
+    });
+
+    return () => {
+      socket.off("gameOver");
+    };
+  }, [socket]);
+
   const handleQuit = () => {
     socket.emit("leaveRoom", { roomId });
     navigate("/");
@@ -112,6 +132,13 @@ function GameRoom() {
       <button className="quit-button" onClick={handleQuit}>
         Quitter la partie
       </button>
+      {gameOverMessage && (
+        <GameOverMessage
+          message={gameOverMessage}
+          onAccept={handleQuit}
+          isWinner={socket.id === winnerId}
+        />
+      )}
     </div>
   );
 }

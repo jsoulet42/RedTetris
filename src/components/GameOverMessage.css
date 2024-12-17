@@ -1,0 +1,14 @@
+.game-over-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #1f4037, #99f2c8);
+  color: var(--accent-color);
+  text-shadow: 0 0 10px var(--accent-color);
+  padding: 20px 40px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px var(--accent-color);
+  font-family: var(--font-primary);
+  text-align: center;
+}

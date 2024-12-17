@@ -239,7 +239,7 @@ export default gameReducer;
 ==== ./src/pages/GameRoom.js ====
 // ./src/pages/GameRoom/GameRoom.js
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import GameGrid from "../components/gameGrid/GameGrid";
@@ -249,6 +249,7 @@ import { updateGameState, resetGameState } from "../redux/actions/gameActions";
 import "./GameRoom.css";
 import { useNavigate } from "react-router-dom";
 import OpponentGrid from "../components/opponentGrid/OpponentGrid";
+import GameOverMessage from "../components/GameOverMessage"; // Import ajouté
 
 function GameRoom() {
   const { roomId } = useParams();
@@ -261,6 +262,8 @@ function GameRoom() {
   const playerName = localStorage.getItem("playerName");
   const navigate = useNavigate();
   const opponents = useSelector((state) => state.game.get("opponents"));
+
+  const [gameOverMessage, setGameOverMessage] = useState(null); // Ajout de l'état pour la fin de partie
 
   useEffect(() => {
     if (!mode) return;
@@ -315,6 +318,21 @@ function GameRoom() {
     };
   }, []);
 
+  // Écouter l'événement de fin de partie
+  useEffect(() => {
+    socket.on("gameOver", ({ loserId, winnerId }) => {
+      if (socket.id === loserId) {
+        setGameOverMessage("Défaite : Vous avez perdu !");
+      } else if (socket.id === winnerId) {
+        setGameOverMessage("Victoire : Vous avez gagné !");
+      }
+    });
+
+    return () => {
+      socket.off("gameOver");
+    };
+  }, []);
+
   const handleQuit = () => {
     socket.emit("leaveRoom", { roomId });
     navigate("/");
@@ -351,6 +369,7 @@ function GameRoom() {
       <button className="quit-button" onClick={handleQuit}>
         Quitter la partie
       </button>
+      {gameOverMessage && <GameOverMessage message={gameOverMessage} />}
     </div>
   );
 }
@@ -556,6 +575,7 @@ import socket from "../socket";
 import { useNavigate } from "react-router-dom";
 import { resetGameState } from "../redux/actions/gameActions";
 import "./SoloGame.css";
+import GameOverMessage from "../components/GameOverMessage"; // Import ajouté
 
 function SoloGame() {
   const gameRoomRef = useRef(null);
@@ -565,6 +585,8 @@ function SoloGame() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [gameStateReceived, setGameStateReceived] = useState(false);
+
+  const [gameOverMessage, setGameOverMessage] = useState(null); // Ajout de l'état pour la fin de partie
 
   useEffect(() => {
     if (!gameStateReceived) {
@@ -616,6 +638,22 @@ function SoloGame() {
     };
   }, [roomId, playerName, gameStateReceived]);
 
+  // Écouter l'événement de fin de partie
+  useEffect(() => {
+    socket.on("gameOver", ({ loserId, winnerId }) => {
+      console.log(`DEBUG : gameOver capturé dans SoloGame.js`);
+      if (socket.id === loserId) {
+        setGameOverMessage("Défaite : Vous avez perdu !");
+      } else if (socket.id === winnerId) {
+        setGameOverMessage("Victoire : Vous avez gagné !");
+      }
+    });
+
+    return () => {
+      socket.off("gameOver");
+    };
+  }, []);
+
   const handleQuit = () => {
     if (roomId) {
       socket.emit("leaveRoom", { roomId });
@@ -635,6 +673,7 @@ function SoloGame() {
       <button className="quit-button" onClick={handleQuit}>
         Quitter la partie
       </button>
+      {gameOverMessage && <GameOverMessage message={gameOverMessage} />}
     </div>
   );
 }
@@ -725,6 +764,7 @@ import '@testing-library/jest-dom';
 
 /* Importer les variables CSS */
 @import "./styles/variables.css";
+@import "./styles/responsive.css";
 
 /* Styles globaux */
 body,
@@ -787,19 +827,13 @@ button:focus {
 /* Animations */
 @keyframes flicker {
   0%,
-  19%,
-  21%,
-  23%,
-  25%,
-  54%,
-  56%,
+  50%,
   100% {
     opacity: 1;
   }
   20%,
-  24%,
-  55% {
-    opacity: 0.4;
+  80% {
+    opacity: 0.8; /* Réduction légère de l'opacité */
   }
 }
 
@@ -808,78 +842,22 @@ h2,
 h3 {
   animation: flicker 3s infinite;
 }
+-e 
 
-/* Media Queries pour Responsivité */
-@media (max-width: 1200px) {
-  .game-content {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .opponents-container {
-    max-width: 100%;
-    margin-top: 20px;
-  }
-
-  .game-grid,
-  .opponent-grid {
-    width: 150px;
-    height: 300px;
-  }
-}
-
-@media (max-width: 768px) {
-  .game-room h1 {
-    font-size: 2rem;
-  }
-
-  .game-room h2 {
-    font-size: 1rem;
-  }
-
-  .game-grid,
-  .opponent-grid {
-    width: 120px;
-    height: 240px;
-  }
-
-  .room-list,
-  .player-list {
-    width: 150px;
-  }
-
-  .player-name-input input {
-    width: 250px;
-  }
-}
-
-@media (max-width: 480px) {
-  .game-grid,
-  .opponent-grid {
-    width: 100px;
-    height: 200px;
-  }
-
-  .room-list,
-  .player-list {
-    width: 120px;
-  }
-
-  .player-name-input input {
-    width: 200px;
-  }
-
-  .game-room h1 {
-    font-size: 1.5rem;
-  }
-
-  .game-room h2 {
-    font-size: 0.9rem;
-  }
-
-  .score-board {
-    font-size: 1.2rem;
-  }
+==== ./src/components/GameOverMessage.css ====
+.game-over-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #1f4037, #99f2c8);
+  color: var(--accent-color);
+  text-shadow: 0 0 10px var(--accent-color);
+  padding: 20px 40px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px var(--accent-color);
+  font-family: var(--font-primary);
+  text-align: center;
 }
 -e 
 
@@ -908,6 +886,21 @@ function CreateRoom() {
 }
 
 export default CreateRoom;
+-e 
+
+==== ./src/components/GameOverMessage.js ====
+import React from "react";
+import "./GameOverMessage.css";
+
+function GameOverMessage({ message }) {
+  return (
+    <div className="game-over-message">
+      <h1>{message}</h1>
+    </div>
+  );
+}
+
+export default GameOverMessage;
 -e 
 
 ==== ./src/components/RoomList.css ====
@@ -1377,6 +1370,17 @@ socket.on("disconnect", (reason) => {
   console.log("Socket déconnecté :", reason);
 });
 
+socket.on("gameOver", ({ loserId, winnerId }) => {
+  console.log(
+    `DEBUG : gameOver reçu côté client. Loser: ${loserId}, Winner: ${winnerId}`
+  );
+  if (socket.id === loserId) {
+    alert("Défaite : Vous avez perdu !");
+  } else if (socket.id === winnerId) {
+    alert("Victoire : Vous avez gagné !");
+  }
+});
+
 export default socket;
 -e 
 
@@ -1463,6 +1467,88 @@ export default App;
   /* Typographie Moderne */
   --font-primary: "Orbitron", sans-serif; /* Police principale */
   --font-secondary: "Roboto", sans-serif; /* Police secondaire */
+}
+-e 
+
+==== ./src/styles/responsive.css ====
+/* ./src/styles/responsive.css */
+
+/* Petits écrans : Téléphones et tablettes */
+@media (max-width: 768px) {
+  .game-grid {
+    width: 90vw;
+    height: 60vh;
+  }
+
+  .game-room h1 {
+    font-size: 2rem;
+  }
+
+  .game-room h2 {
+    font-size: 1rem;
+  }
+
+  .room-list,
+  .player-list {
+    width: 150px;
+  }
+
+  .player-name-input input {
+    width: 250px;
+  }
+
+  button {
+    font-size: 1rem;
+    padding: 10px;
+  }
+}
+
+/* Moyens écrans : Tablettes et petits laptops */
+@media (min-width: 769px) and (max-width: 1365px) {
+  .game-grid {
+    width: 60vw;
+    height: 70vh;
+  }
+
+  h1,
+  h2 {
+    font-size: 2rem;
+  }
+
+  button {
+    font-size: 1.2rem;
+    padding: 12px;
+  }
+}
+
+/* Grands écrans : Laptops et écrans larges */
+@media (min-width: 1366px) {
+  .game-grid {
+    width: 20vw;
+    height: 80vh;
+    max-width: 500px;
+    max-height: 800px;
+  }
+
+  .game-room h1,
+  .solo-game h1 {
+    font-size: 3.5rem;
+  }
+
+  .game-room h2,
+  .solo-game h2 {
+    font-size: 2rem;
+  }
+
+  .quit-button {
+    padding: 15px 30px;
+    font-size: 1.5rem;
+  }
+
+  button {
+    font-size: 1.5rem;
+    padding: 15px;
+  }
 }
 -e 
 
@@ -1881,6 +1967,13 @@ function clearCompleteLines(grid) {
   };
 }
 
+function isGameOver(grid) {
+  console.log("DEBUG : Vérification de la grille pour Game Over :", grid);
+  const gameOver = grid[0].some((cell) => cell === 1);
+  console.log("DEBUG : Résultat de isGameOver :", gameOver);
+  return gameOver;
+}
+
 module.exports = {
   TETROMINOS,
   generateRandomPiece,
@@ -1890,6 +1983,7 @@ module.exports = {
   isValidPosition,
   stackPiece,
   clearCompleteLines,
+  isGameOver,
 };
 -e 
 
@@ -1932,6 +2026,8 @@ module.exports = { addPlayer, removePlayer, players };
 
 ==== ./server/sockets/gameEvents.js ====
 // ./server/sockets/gameEvents.js
+
+const { isGameOver } = require("../game/gameLogic");
 
 const {
   movePiece,
@@ -2105,6 +2201,25 @@ function handleGameEvents(socket, io) {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
         player.currentPiece = generateRandomPiece();
+        // Vérifier si le joueur a perdu
+        if (isGameOver(player.grid)) {
+          console.log(
+            "DEBUG : Appel à isGameOver - Grille détectée comme pleine :",
+            player.grid
+          );
+
+          io.to(player.roomId).emit("gameOver", {
+            loserId: socket.id,
+            winnerId: getWinnerId(player.roomId, socket.id),
+          });
+          console.log(
+            `DEBUG : Game over pour le joueur ${socket.id} dans la room ${player.roomId}`
+          );
+          return;
+        } else {
+          console.log("DEBUG : isGameOver renvoie false - La partie continue.");
+        }
+
         // Supprimer les lignes complètes
         const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);
         player.grid = newGrid;
@@ -2166,6 +2281,25 @@ function handleGameEvents(socket, io) {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
         player.currentPiece = generateRandomPiece();
+        // Vérifier si le joueur a perdu
+        if (isGameOver(player.grid)) {
+          console.log(
+            "DEBUG : Appel à isGameOver - Grille détectée comme pleine :",
+            player.grid
+          );
+
+          io.to(player.roomId).emit("gameOver", {
+            loserId: socket.id,
+            winnerId: getWinnerId(player.roomId, socket.id),
+          });
+          console.log(
+            `DEBUG : Game over pour le joueur ${socket.id} dans la room ${player.roomId}`
+          );
+          return;
+        } else {
+          console.log("DEBUG : isGameOver renvoie false - La partie continue.");
+        }
+
         // Supprimer les lignes complètes
         const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);
         player.grid = newGrid;
@@ -2208,6 +2342,14 @@ function handleGameEvents(socket, io) {
     }
     console.log("Joueur déconnecté :", socket.id);
   });
+}
+
+function getWinnerId(roomId, loserId) {
+  const room = rooms[roomId];
+  if (room) {
+    return room.players.find((playerId) => playerId !== loserId); // Retourne l'autre joueur
+  }
+  return null; // S'il n'y a pas d'autre joueur
 }
 
 module.exports = handleGameEvents;

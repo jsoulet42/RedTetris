@@ -163,6 +163,13 @@ function clearCompleteLines(grid) {
   };
 }
 
+function isGameOver(grid) {
+  console.log("DEBUG : Vérification de la grille pour Game Over :", grid);
+  const gameOver = grid[0].some((cell) => cell === 1);
+  console.log("DEBUG : Résultat de isGameOver :", gameOver);
+  return gameOver;
+}
+
 module.exports = {
   TETROMINOS,
   generateRandomPiece,
@@ -172,4 +179,5 @@ module.exports = {
   isValidPosition,
   stackPiece,
   clearCompleteLines,
+  isGameOver,
 };

@@ -25,11 +25,12 @@
 
 .game-content {
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* Place les éléments l'un à côté de l'autre */
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Pour aligner en haut, ce qui est plus logique pour des grilles */
   width: 100%;
   max-width: 1200px;
+  gap: 20px; /* Un écart entre la grille principale et les grilles adverses */
 }
 
 .game-grid-container,

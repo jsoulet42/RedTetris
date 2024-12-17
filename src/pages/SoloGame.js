@@ -7,6 +7,7 @@ import socket from "../socket";
 import { useNavigate } from "react-router-dom";
 import { resetGameState } from "../redux/actions/gameActions";
 import "./SoloGame.css";
+import GameOverMessage from "../components/GameOverMessage"; // Import ajouté
 
 function SoloGame() {
   const gameRoomRef = useRef(null);
@@ -16,6 +17,8 @@ function SoloGame() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [gameStateReceived, setGameStateReceived] = useState(false);
+  const [winnerId, setWinnerId] = useState(null);
+  const [gameOverMessage, setGameOverMessage] = useState(null); // Ajout de l'état pour la fin de partie
 
   useEffect(() => {
     if (!gameStateReceived) {
@@ -67,6 +70,22 @@ function SoloGame() {
     };
   }, [roomId, playerName, gameStateReceived]);
 
+  // Écouter l'événement de fin de partie
+  useEffect(() => {
+    socket.on("gameOver", ({ loserId, winnerId }) => {
+      setWinnerId(winnerId);
+      if (socket.id === loserId) {
+        setGameOverMessage("Défaite : Vous avez perdu !");
+      } else if (socket.id === winnerId) {
+        setGameOverMessage("Victoire : Vous avez gagné !");
+      }
+    });
+
+    return () => {
+      socket.off("gameOver");
+    };
+  }, [socket]);
+
   const handleQuit = () => {
     if (roomId) {
       socket.emit("leaveRoom", { roomId });
@@ -86,6 +105,13 @@ function SoloGame() {
       <button className="quit-button" onClick={handleQuit}>
         Quitter la partie
       </button>
+      {gameOverMessage && (
+        <GameOverMessage
+          message={gameOverMessage}
+          onAccept={handleQuit}
+          isWinner={socket.id === winnerId}
+        />
+      )}
     </div>
   );
 }
