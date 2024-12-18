@@ -150,17 +150,25 @@ function handleGameEvents(socket, io) {
 
   // Gestion de l'événement 'leaveRoom' pour tous les modes
   socket.on("leaveRoom", ({ roomId }) => {
+    const room = rooms[roomId];
     leaveRoom(roomId, socket.id);
     socket.leave(roomId);
     removePlayer(socket.id);
     console.log(`Joueur ${socket.id} a quitté la room ${roomId}`);
 
-    // Mettre à jour la liste des rooms disponibles
-    const availableRooms = getAvailableRooms();
-    io.emit("availableRooms", availableRooms); // Notifier tous les clients
-
-    // Informer les autres joueurs de la salle
-    io.to(roomId).emit("playerLeft", { playerId: socket.id });
+    if (room && room.status === "finished") {
+      room.players.forEach((playerId) => {
+        socket.leave(roomId);
+        removePlayer(playerId);
+        console.log(`Joueur ${playerId} a quitté la room ${roomId}`);
+      });
+      io.to(roomId).emit("roomClosed");
+      delete rooms[roomId];
+    } else {
+      const availableRooms = getAvailableRooms();
+      io.emit("availableRooms", availableRooms);
+      io.to(roomId).emit("playerLeft", { playerId: socket.id });
+    }
   });
 
   // Gérer les déplacements des pièces
@@ -174,22 +182,6 @@ function handleGameEvents(socket, io) {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
         console.log("DEBUG : Grille après empilement :", player.grid);
-
-        if (isGameOver(player.grid)) {
-          console.log("DEBUG : Game Over détecté juste après empilement");
-          const room = rooms[player.roomId];
-          if (room) {
-            room.status = "finished";
-          }
-          io.to(player.roomId).emit("gameOver", {
-            loserId: socket.id,
-            winnerId: getWinnerId(player.roomId, socket.id),
-          });
-          return; // Important pour sortir et ne plus continuer l'exécution
-        } else {
-          console.log("DEBUG : Pas de game over après empilement");
-        }
-
         player.currentPiece = generateRandomPiece();
 
         // Supprimer les lignes complètes
@@ -253,18 +245,6 @@ function handleGameEvents(socket, io) {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
         console.log("DEBUG : Grille après empilement :", player.grid);
-
-        if (isGameOver(player.grid)) {
-          console.log("DEBUG : Game Over détecté juste après empilement");
-          io.to(player.roomId).emit("gameOver", {
-            loserId: socket.id,
-            winnerId: getWinnerId(player.roomId, socket.id),
-          });
-          return; // Important pour sortir et ne plus continuer l'exécution
-        } else {
-          console.log("DEBUG : Pas de game over après empilement");
-        }
-
         player.currentPiece = generateRandomPiece();
         // Supprimer les lignes complètes
         const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);

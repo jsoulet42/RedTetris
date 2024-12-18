@@ -85,11 +85,8 @@ setInterval(() => {
             "DEBUG : Grille après empilement dans la boucle principale:",
             player.grid
           );
-
           if (isGameOver(player.grid)) {
-            console.log(
-              "DEBUG : Game Over détecté dans la boucle principale du serveur."
-            );
+            console.log("DEBUG : Game Over détecté juste après empilement");
             const room = rooms[player.roomId];
             if (room) {
               room.status = "finished";
@@ -98,11 +95,10 @@ setInterval(() => {
               loserId: playerId,
               winnerId: getWinnerId(player.roomId, playerId),
             });
-            return; // Importante pour stopper la logique supplémentaire
+
+            return;
           } else {
-            console.log(
-              "DEBUG : Pas de game over après empilement dans la boucle principale."
-            );
+            console.log("DEBUG : Pas de game over après empilement");
           }
 
           // Supprimer les lignes complètes

@@ -262,6 +262,7 @@ function GameRoom() {
   const playerName = localStorage.getItem("playerName");
   const navigate = useNavigate();
   const opponents = useSelector((state) => state.game.get("opponents"));
+  const [winnerId, setWinnerId] = useState(null);
 
   const [gameOverMessage, setGameOverMessage] = useState(null); // Ajout de l'état pour la fin de partie
 
@@ -321,6 +322,7 @@ function GameRoom() {
   // Écouter l'événement de fin de partie
   useEffect(() => {
     socket.on("gameOver", ({ loserId, winnerId }) => {
+      setWinnerId(winnerId);
       if (socket.id === loserId) {
         setGameOverMessage("Défaite : Vous avez perdu !");
       } else if (socket.id === winnerId) {
@@ -331,7 +333,7 @@ function GameRoom() {
     return () => {
       socket.off("gameOver");
     };
-  }, []);
+  }, [socket]);
 
   const handleQuit = () => {
     socket.emit("leaveRoom", { roomId });
@@ -369,7 +371,13 @@ function GameRoom() {
       <button className="quit-button" onClick={handleQuit}>
         Quitter la partie
       </button>
-      {gameOverMessage && <GameOverMessage message={gameOverMessage} />}
+      {gameOverMessage && (
+        <GameOverMessage
+          message={gameOverMessage}
+          onAccept={handleQuit}
+          isWinner={socket.id === winnerId}
+        />
+      )}
     </div>
   );
 }
@@ -453,11 +461,12 @@ export default GameRoom;
 
 .game-content {
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* Place les éléments l'un à côté de l'autre */
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Pour aligner en haut, ce qui est plus logique pour des grilles */
   width: 100%;
   max-width: 1200px;
+  gap: 20px; /* Un écart entre la grille principale et les grilles adverses */
 }
 
 .game-grid-container,
@@ -585,7 +594,7 @@ function SoloGame() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [gameStateReceived, setGameStateReceived] = useState(false);
-
+  const [winnerId, setWinnerId] = useState(null);
   const [gameOverMessage, setGameOverMessage] = useState(null); // Ajout de l'état pour la fin de partie
 
   useEffect(() => {
@@ -641,7 +650,7 @@ function SoloGame() {
   // Écouter l'événement de fin de partie
   useEffect(() => {
     socket.on("gameOver", ({ loserId, winnerId }) => {
-      console.log(`DEBUG : gameOver capturé dans SoloGame.js`);
+      setWinnerId(winnerId);
       if (socket.id === loserId) {
         setGameOverMessage("Défaite : Vous avez perdu !");
       } else if (socket.id === winnerId) {
@@ -652,7 +661,7 @@ function SoloGame() {
     return () => {
       socket.off("gameOver");
     };
-  }, []);
+  }, [socket]);
 
   const handleQuit = () => {
     if (roomId) {
@@ -673,7 +682,13 @@ function SoloGame() {
       <button className="quit-button" onClick={handleQuit}>
         Quitter la partie
       </button>
-      {gameOverMessage && <GameOverMessage message={gameOverMessage} />}
+      {gameOverMessage && (
+        <GameOverMessage
+          message={gameOverMessage}
+          onAccept={handleQuit}
+          isWinner={socket.id === winnerId}
+        />
+      )}
     </div>
   );
 }
@@ -892,10 +907,13 @@ export default CreateRoom;
 import React from "react";
 import "./GameOverMessage.css";
 
-function GameOverMessage({ message }) {
+function GameOverMessage({ message, onAccept, isWinner }) {
   return (
     <div className="game-over-message">
       <h1>{message}</h1>
+      <button onClick={onAccept}>
+        {isWinner ? "Retour au menu" : "Accepter la défaite"}
+      </button>
     </div>
   );
 }
@@ -1063,8 +1081,8 @@ export default GameOverMessage;
   grid-template-columns: repeat(10, 1fr);
   gap: 1px;
   background-color: var(--grid-background);
-  width: 80px; /* Taille réduite pour les miniatures */
-  height: 160px;
+  width: 60px; /* Taille réduite pour les miniatures */
+  height: 140px;
   border: 2px solid var(--accent-color);
   box-shadow: 0 0 10px var(--accent-color);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -1374,11 +1392,6 @@ socket.on("gameOver", ({ loserId, winnerId }) => {
   console.log(
     `DEBUG : gameOver reçu côté client. Loser: ${loserId}, Winner: ${winnerId}`
   );
-  if (socket.id === loserId) {
-    alert("Défaite : Vous avez perdu !");
-  } else if (socket.id === winnerId) {
-    alert("Victoire : Vous avez gagné !");
-  }
 });
 
 export default socket;
@@ -1572,6 +1585,7 @@ const { Server } = require("socket.io");
 const handleGameEvents = require("./sockets/gameEvents");
 const { players } = require("./game/playerManager");
 const { rooms } = require("./game/roomManager");
+const { isGameOver } = require("../server/game/gameLogic");
 
 const {
   movePiece,
@@ -1616,6 +1630,14 @@ function computeScore(linesCleared) {
   }
 }
 
+function getWinnerId(roomId, loserId) {
+  const room = rooms[roomId];
+  if (room) {
+    return room.players.find((playerId) => playerId !== loserId);
+  }
+  return null; // S'il n'y a pas d'autre joueur
+}
+
 // Boucle de jeu principale
 setInterval(() => {
   if (!rooms) {
@@ -1625,7 +1647,9 @@ setInterval(() => {
 
   Object.keys(rooms).forEach((roomId) => {
     const room = rooms[roomId];
-    if (room.status !== "in-progress") return;
+    if (room.status !== "in-progress") {
+      return; // On ne traite pas cette room si elle n'est pas en cours de jeu
+    }
 
     room.players.forEach((playerId) => {
       const player = players[playerId];
@@ -1636,6 +1660,29 @@ setInterval(() => {
         } else {
           player.grid = stackPiece(player.grid, player.currentPiece);
           player.currentPiece = generateRandomPiece();
+          console.log(
+            "DEBUG : Grille après empilement dans la boucle principale:",
+            player.grid
+          );
+
+          if (isGameOver(player.grid)) {
+            console.log(
+              "DEBUG : Game Over détecté dans la boucle principale du serveur."
+            );
+            const room = rooms[player.roomId];
+            if (room) {
+              room.status = "finished";
+            }
+            io.to(player.roomId).emit("gameOver", {
+              loserId: playerId,
+              winnerId: getWinnerId(player.roomId, playerId),
+            });
+            return; // Importante pour stopper la logique supplémentaire
+          } else {
+            console.log(
+              "DEBUG : Pas de game over après empilement dans la boucle principale."
+            );
+          }
 
           // Supprimer les lignes complètes
           const { grid: newGrid, linesCleared } = clearCompleteLines(
@@ -2200,25 +2247,24 @@ function handleGameEvents(socket, io) {
       } else {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
-        player.currentPiece = generateRandomPiece();
-        // Vérifier si le joueur a perdu
-        if (isGameOver(player.grid)) {
-          console.log(
-            "DEBUG : Appel à isGameOver - Grille détectée comme pleine :",
-            player.grid
-          );
+        console.log("DEBUG : Grille après empilement :", player.grid);
 
+        if (isGameOver(player.grid)) {
+          console.log("DEBUG : Game Over détecté juste après empilement");
+          const room = rooms[player.roomId];
+          if (room) {
+            room.status = "finished";
+          }
           io.to(player.roomId).emit("gameOver", {
             loserId: socket.id,
             winnerId: getWinnerId(player.roomId, socket.id),
           });
-          console.log(
-            `DEBUG : Game over pour le joueur ${socket.id} dans la room ${player.roomId}`
-          );
-          return;
+          return; // Important pour sortir et ne plus continuer l'exécution
         } else {
-          console.log("DEBUG : isGameOver renvoie false - La partie continue.");
+          console.log("DEBUG : Pas de game over après empilement");
         }
+
+        player.currentPiece = generateRandomPiece();
 
         // Supprimer les lignes complètes
         const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);
@@ -2280,26 +2326,20 @@ function handleGameEvents(socket, io) {
       } else {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
-        player.currentPiece = generateRandomPiece();
-        // Vérifier si le joueur a perdu
-        if (isGameOver(player.grid)) {
-          console.log(
-            "DEBUG : Appel à isGameOver - Grille détectée comme pleine :",
-            player.grid
-          );
+        console.log("DEBUG : Grille après empilement :", player.grid);
 
+        if (isGameOver(player.grid)) {
+          console.log("DEBUG : Game Over détecté juste après empilement");
           io.to(player.roomId).emit("gameOver", {
             loserId: socket.id,
             winnerId: getWinnerId(player.roomId, socket.id),
           });
-          console.log(
-            `DEBUG : Game over pour le joueur ${socket.id} dans la room ${player.roomId}`
-          );
-          return;
+          return; // Important pour sortir et ne plus continuer l'exécution
         } else {
-          console.log("DEBUG : isGameOver renvoie false - La partie continue.");
+          console.log("DEBUG : Pas de game over après empilement");
         }
 
+        player.currentPiece = generateRandomPiece();
         // Supprimer les lignes complètes
         const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);
         player.grid = newGrid;

@@ -12,6 +12,23 @@
   overflow: hidden;
 }
 
+.game-room {
+  transform-origin: top left;
+  /* On suppose que le design idéal fait 1200px de large et 900px de haut
+	   Ajustez ces valeurs si nécessaire */
+  transform: scale(min(100vw/1200, 100vh/900));
+}
+
+.game-room-wrapper {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
 .game-room h1 {
   font-size: 2.5rem;
   margin-bottom: 10px;

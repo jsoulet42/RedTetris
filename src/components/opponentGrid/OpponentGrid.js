@@ -10,7 +10,7 @@ function OpponentGrid({ grid }) {
   }
 
   return (
-    <div className="game-grid">
+    <div className="opponent-grid">
       {grid.map((row, rowIndex) => (
         <div key={rowIndex} className="grid-row">
           {row.map((cell, colIndex) => (

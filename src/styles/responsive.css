@@ -2,9 +2,19 @@
 
 /* Petits écrans : Téléphones et tablettes */
 @media (max-width: 768px) {
+  /* Grille principale */
   .game-grid {
     width: 90vw;
     height: 60vh;
+  }
+
+  /* Grille adversaire :
+	   On utilise un pourcentage de l'écran (vw) pour qu'elle soit plus petite.
+	   Ratio original: height/width ≈ 2.33 (140/60)
+	   Si on prend width: 15vw, height ≈ 15vw * 2.33 = ~35vw de haut */
+  .opponent-grid {
+    width: 15vw;
+    height: calc(15vw * (140 / 60));
   }
 
   .game-room h1 {
@@ -32,9 +42,19 @@
 
 /* Moyens écrans : Tablettes et petits laptops */
 @media (min-width: 769px) and (max-width: 1365px) {
+  /* Grille principale */
   .game-grid {
     width: 60vw;
     height: 70vh;
+  }
+
+  /* Grille adversaire :
+	   On réduit encore la taille pour garder la différence.
+	   width: 8vw, height: ~8vw*2.33 ≈ 18.6vw
+	*/
+  .opponent-grid {
+    width: 8vw;
+    height: calc(8vw * (140 / 60));
   }
 
   h1,
@@ -50,11 +70,20 @@
 
 /* Grands écrans : Laptops et écrans larges */
 @media (min-width: 1366px) {
+  /* Grille principale */
   .game-grid {
     width: 20vw;
     height: 80vh;
     max-width: 500px;
     max-height: 800px;
+  }
+
+  /* Grille adversaire :
+	   Retour à la taille fixe définie à l'origine.
+	*/
+  .opponent-grid {
+    width: 60px;
+    height: 140px;
   }
 
   .game-room h1,
