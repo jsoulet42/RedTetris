@@ -3,10 +3,17 @@
 /* Importer les variables CSS */
 @import "./styles/variables.css";
 @import "./styles/responsive.css";
+@import "./components/playerList/PlayerList.css";
+@import "./pages/GameRoom.css";
 
-/* Styles globaux */
-body,
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html,
+body,
 #root {
   margin: 0;
   padding: 0;
@@ -15,10 +22,13 @@ html,
   background-color: var(--background-color);
   color: var(--text-color);
   font-family: var(--font-secondary);
+  overflow-x: hidden; /* Empêche le débordement horizontal global */
+}
+
+body {
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden; /* Empêche le défilement global */
 }
 
 .App {
@@ -27,6 +37,7 @@ html,
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: auto; /* Permet le défilement si nécessaire */
 }
 
 h1,
@@ -44,12 +55,14 @@ button {
   background-color: var(--button-background);
   color: var(--button-text);
   border: none;
-  padding: 10px 20px;
+  padding: 0.6rem 1.2rem;
   border-radius: 5px;
   cursor: pointer;
   font-family: var(--font-secondary);
   transition: background-color 0.3s ease, transform 0.2s ease,
     box-shadow 0.3s ease;
+  width: 100%; /* Permet aux boutons de s'adapter à leur conteneur */
+  max-width: 220px; /* Limite la largeur maximale */
 }
 
 button:hover {
@@ -71,7 +84,7 @@ button:focus {
   }
   20%,
   80% {
-    opacity: 0.8; /* Réduction légère de l'opacité */
+    opacity: 0.8;
   }
 }
 

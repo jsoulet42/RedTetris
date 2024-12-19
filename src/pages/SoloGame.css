@@ -5,7 +5,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  width: 100%;
+  min-height: 100vh;
   padding: 10px;
   box-sizing: border-box;
   background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
@@ -16,11 +17,13 @@
   font-size: 2.5rem;
   margin-bottom: 10px;
   text-shadow: 0 0 10px var(--accent-color);
+  text-align: center;
 }
 
 .solo-game h2 {
   font-size: 1.2rem;
   margin-bottom: 20px;
+  text-align: center;
 }
 
 .score-board {
@@ -34,8 +37,78 @@
   background: linear-gradient(45deg, #ff4d4f, #ff7875);
   box-shadow: 0 0 10px #ff4d4f;
   color: #ffffff;
+  width: 100%;
+  max-width: 220px;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
 }
 
 .quit-button:hover {
   box-shadow: 0 0 15px #ff4d4f;
+  transform: scale(1.05);
+}
+
+/* Responsivité */
+@media (max-width: 768px) {
+  .solo-game h1 {
+    font-size: 1.8rem;
+  }
+
+  .solo-game h2 {
+    font-size: 1rem;
+  }
+
+  .score-board {
+    font-size: 1.2rem;
+  }
+
+  .quit-button {
+    max-width: 150px;
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1365px) {
+  .solo-game h1 {
+    font-size: 2rem;
+  }
+
+  .solo-game h2 {
+    font-size: 1.1rem;
+  }
+
+  .score-board {
+    font-size: 1.3rem;
+  }
+
+  .quit-button {
+    max-width: 180px;
+    font-size: 1rem;
+    padding: 0.55rem 1.1rem;
+  }
+}
+
+@media (min-width: 1366px) {
+  .solo-game h1 {
+    font-size: 2.5rem;
+  }
+
+  .solo-game h2 {
+    font-size: 1.2rem;
+  }
+
+  .score-board {
+    font-size: 1.5rem;
+  }
+
+  .quit-button {
+    max-width: 220px;
+    font-size: 1rem;
+    padding: 0.6rem 1.2rem;
+  }
 }

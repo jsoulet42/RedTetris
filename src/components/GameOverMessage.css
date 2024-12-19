@@ -1,3 +1,5 @@
+/* ./src/components/GameOverMessage.css */
+
 .game-over-message {
   position: fixed;
   top: 50%;
@@ -6,9 +8,96 @@
   background: linear-gradient(135deg, #1f4037, #99f2c8);
   color: var(--accent-color);
   text-shadow: 0 0 10px var(--accent-color);
-  padding: 20px 40px;
+  padding: 1.5rem 3rem;
   border-radius: 10px;
   box-shadow: 0 0 20px var(--accent-color);
   font-family: var(--font-primary);
   text-align: center;
+  z-index: 1000;
+  width: 90%;
+  max-width: 400px;
+  box-sizing: border-box;
+}
+
+.game-over-message h1 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.game-over-message button {
+  width: 100%;
+  max-width: 200px;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  background: linear-gradient(
+    45deg,
+    var(--accent-color),
+    var(--secondary-accent)
+  );
+  box-shadow: 0 0 15px var(--accent-color);
+  color: var(--text-color);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.game-over-message button:hover {
+  box-shadow: 0 0 20px var(--accent-color);
+  transform: scale(1.05);
+}
+
+/* Responsivité */
+@media (max-width: 768px) {
+  .game-over-message {
+    padding: 1rem 2rem;
+    width: 95%;
+    max-width: 300px;
+  }
+
+  .game-over-message h1 {
+    font-size: 1.2rem;
+  }
+
+  .game-over-message button {
+    max-width: 150px;
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1365px) {
+  .game-over-message {
+    padding: 1.3rem 2.5rem;
+    width: 90%;
+    max-width: 350px;
+  }
+
+  .game-over-message h1 {
+    font-size: 1.4rem;
+  }
+
+  .game-over-message button {
+    max-width: 180px;
+    font-size: 1rem;
+    padding: 0.55rem 1.1rem;
+  }
+}
+
+@media (min-width: 1366px) {
+  .game-over-message {
+    padding: 1.5rem 3rem;
+    width: 90%;
+    max-width: 400px;
+  }
+
+  .game-over-message h1 {
+    font-size: 1.5rem;
+  }
+
+  .game-over-message button {
+    max-width: 200px;
+    font-size: 1rem;
+    padding: 0.6rem 1.2rem;
+  }
 }

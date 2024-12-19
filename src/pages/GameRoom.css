@@ -1,24 +1,5 @@
 /* ./src/pages/GameRoom.css */
 
-.game-room {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: 10px;
-  box-sizing: border-box;
-  background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
-  overflow: hidden;
-}
-
-.game-room {
-  transform-origin: top left;
-  /* On suppose que le design idéal fait 1200px de large et 900px de haut
-	   Ajustez ces valeurs si nécessaire */
-  transform: scale(min(100vw/1200, 100vh/700));
-}
-
 .game-room-wrapper {
   width: 100vw;
   height: 100vh;
@@ -27,71 +8,53 @@
   justify-content: center;
   align-items: center;
   position: relative;
+  padding: 10px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
+}
+
+.game-room {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 1200px;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.game-room h1,
+.game-room h2 {
+  text-align: center;
+  color: var(--accent-color);
+  text-shadow: 0 0 10px var(--accent-color);
 }
 
 .game-room h1 {
-  font-size: 1rem;
-  margin-bottom: 10px;
-  text-shadow: 0 0 10px var(--accent-color);
+  font-size: 1.5rem;
 }
 
 .game-room h2 {
   font-size: 1rem;
-  margin-bottom: 20px;
-}
-
-.game-content {
-  display: flex;
-  flex-direction: row; /* Place les éléments l'un à côté de l'autre */
-  justify-content: center;
-  align-items: flex-start; /* Pour aligner en haut, ce qui est plus logique pour des grilles */
-  width: 100%;
-  max-width: 1200px;
-  gap: 20px; /* Un écart entre la grille principale et les grilles adverses */
-}
-
-.game-grid-container,
-.opponents-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 10px 0;
-}
-
-.opponents-container {
-  max-width: 300px;
-}
-
-.score-board {
-  margin-top: 20px;
-  font-size: 1.5rem;
-  text-shadow: 0 0 5px var(--accent-color);
-}
-
-.quit-button {
-  margin-top: 10px;
-  background: linear-gradient(45deg, #ff4d4f, #ff7875);
-  box-shadow: 0 0 10px #ff4d4f;
-  color: #ffffff;
-}
-
-.quit-button:hover {
-  box-shadow: 0 0 15px #ff4d4f;
 }
 
 .layout {
   display: flex;
-  flex-direction: row; /* Met la sidebar à gauche, main-content à droite */
+  flex-direction: row;
   width: 100%;
-  height: 100%;
+  height: calc(100% - 200px);
+  gap: 0.5rem;
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* Aligner le contenu à gauche */
+  align-items: flex-start;
   justify-content: flex-start;
-  margin-right: 20px; /* Espace entre la sidebar et le contenu principal */
+  width: 220px;
+  flex-shrink: 0;
 }
 
 .main-content {
@@ -99,5 +62,200 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+  flex: 1;
+}
+
+.game-content {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   width: 100%;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.game-grid-container {
+  flex: 1;
+  max-width: 500px;
+}
+
+.opponents-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.opponent-item h3 {
+  font-size: 1rem;
+  margin-bottom: 5px;
+  text-align: center;
+  color: var(--accent-color);
+}
+
+.score-board {
+  margin-top: 20px;
+  font-size: 1.5rem;
+  text-shadow: 0 0 5px var(--accent-color);
+  color: var(--text-color);
+}
+
+.quit-button {
+  margin-top: 10px;
+  background: linear-gradient(45deg, #ff4d4f, #ff7875);
+  box-shadow: 0 0 10px #ff4d4f;
+  color: #ffffff;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+  width: 100%;
+  max-width: 220px;
+}
+
+.quit-button:hover {
+  box-shadow: 0 0 15px #ff4d4f;
+  transform: scale(1.05);
+}
+
+/* Responsivité */
+
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: row; /* Garder en row pour mobile */
+    flex-wrap: wrap;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row; /* Aligner les éléments en ligne */
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .main-content {
+    width: 100%;
+  }
+
+  .game-content {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .game-grid-container {
+    max-width: 90vw; /* Réduire la taille de la grille principale */
+    margin-left: 2rem;
+  }
+
+  .opponents-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+
+    max-width: 40vw; /* Réduire la largeur des minimaps */
+  }
+
+  .opponent-item h3 {
+    font-size: 0.9rem;
+  }
+
+  .opponent-grid {
+    max-width: 80px;
+    margin-left: 1rem;
+  }
+
+  .score-board {
+    font-size: 1.2rem;
+  }
+
+  .quit-button {
+    max-width: 150px;
+    padding: 0.5rem 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .custom-quit-button {
+    max-width: 100px;
+    padding: 0.5rem 0.5rem;
+    font-size: 0.3rem;
+  }
+
+  .game-room h1 {
+    font-size: 0.2rem; /* Corrigé */
+  }
+
+  .game-room h2 {
+    font-size: 0.9rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1365px) {
+  .opponents-container {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 300px;
+  }
+
+  .game-grid-container {
+    max-width: 400px;
+  }
+
+  .quit-button {
+    max-width: 180px;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+  }
+
+  .game-room h1 {
+    font-size: 0.2rem;
+  }
+
+  .game-room h2 {
+    font-size: 0.2rem;
+  }
+
+  .score-board {
+    font-size: 1.3rem;
+  }
+
+  .opponent-grid {
+    max-width: 100px;
+  }
+}
+
+@media (min-width: 1366px) {
+  .opponents-container {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 300px;
+  }
+
+  .game-grid-container {
+    max-width: 500px;
+  }
+
+  .quit-button {
+    max-width: 220px;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+  }
+
+  .game-room h1 {
+    font-size: 2rem;
+  }
+
+  .game-room h2 {
+    font-size: 1.2rem;
+  }
+
+  .score-board {
+    font-size: 1.5rem;
+  }
+
+  .opponent-grid {
+    max-width: 150px;
+  }
 }

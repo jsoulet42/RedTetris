@@ -1,4 +1,4 @@
-// ./src/components/PlayerNameInput/PlayerNameInput.js
+// ./src/components/PlayerNameInput.js
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";

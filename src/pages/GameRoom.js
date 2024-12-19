@@ -9,8 +9,9 @@ import socket from "../socket";
 import "./GameRoom.css";
 import { useNavigate } from "react-router-dom";
 import OpponentGrid from "../components/opponentGrid/OpponentGrid";
-import GameOverMessage from "../components/GameOverMessage"; // Import ajouté
+import GameOverMessage from "../components/GameOverMessage";
 import { resetGameState } from "../redux/actions/gameActions";
+import { updateCumulativeScore } from "../utils/scoreUtils";
 
 function GameRoom() {
   const { roomId } = useParams();
@@ -80,24 +81,35 @@ function GameRoom() {
     };
   }, []);
 
-  // Écouter l'événement de fin de partie
+  // Écouter l'événement de fin de partie et mettre à jour le score cumulatif
   useEffect(() => {
     socket.on("gameOver", ({ loserId, winnerId }) => {
       setWinnerId(winnerId);
       if (socket.id === loserId) {
         setGameOverMessage("Défaite : Vous avez perdu !");
+        // Mettre à jour le score cumulatif
+        if (playerName) {
+          updateCumulativeScore(playerName, score);
+        }
       } else if (socket.id === winnerId) {
         setGameOverMessage("Victoire : Vous avez gagné !");
+        // Mettre à jour le score cumulatif
+        if (playerName) {
+          updateCumulativeScore(playerName, score);
+        }
       }
     });
 
     return () => {
       socket.off("gameOver");
     };
-  }, []);
+  }, [playerName, score]);
 
   const handleQuit = () => {
+    // Optionnel : Déjà géré via l'événement 'gameOver'
+    // Si le joueur quitte manuellement, le serveur émettra 'gameOver'
     socket.emit("leaveRoom", { roomId });
+    dispatch(resetGameState());
     navigate("/");
   };
 
@@ -116,13 +128,16 @@ function GameRoom() {
   return (
     <div className="game-room-wrapper">
       <div className="game-room" ref={gameRoomRef} tabIndex="0">
-        <h2>Salle de Jeu - {roomId}</h2>
+        <h1>Salle de Jeu - {roomId}</h1>
         <h2>Joueur : {playerName}</h2>
         {gameStarted || mode === "solo" ? (
           <div className="layout">
             <div className="sidebar">
               {mode === "multiplayer" && <PlayerList />}
-              <button className="quit-button" onClick={handleQuit}>
+              <button
+                className="quit-button custom-quit-button"
+                onClick={handleQuit}
+              >
                 Quitter la partie
               </button>
             </div>
@@ -135,7 +150,10 @@ function GameRoom() {
                   <div className="opponents-container">
                     {opponents &&
                       opponents.valueSeq().map((opponent) => (
-                        <div key={opponent.get("playerId")}>
+                        <div
+                          key={opponent.get("playerId")}
+                          className="opponent-item"
+                        >
                           <h3>{opponent.get("name")}</h3>
                           <OpponentGrid grid={opponent.get("grid")} />
                         </div>

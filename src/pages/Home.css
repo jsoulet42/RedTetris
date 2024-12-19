@@ -5,7 +5,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  width: 100%;
+  min-height: 100vh;
   padding: 20px;
   box-sizing: border-box;
   background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
@@ -15,6 +16,14 @@
   font-size: 3rem;
   margin-bottom: 20px;
   text-shadow: 0 0 10px var(--accent-color);
+  text-align: center;
+}
+
+.home-page h2 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  text-shadow: 0 0 5px var(--accent-color);
+  text-align: center;
 }
 
 .mode-selection,
@@ -22,13 +31,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  gap: 20px;
 }
 
 .mode-selection button,
 .multiplayer-options button {
-  margin: 10px 0;
-  width: 200px;
+  width: 100%;
+  max-width: 220px;
   font-size: 1.2rem;
+  padding: 0.6rem 1.2rem;
   background: linear-gradient(
     45deg,
     var(--accent-color),
@@ -37,9 +49,91 @@
   box-shadow: 0 0 15px var(--accent-color);
   color: var(--text-color);
   border-radius: 5px;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
 }
 
 .mode-selection button:hover,
 .multiplayer-options button:hover {
   box-shadow: 0 0 20px var(--accent-color);
+  transform: scale(1.05);
+}
+
+.cumulative-score {
+  margin-top: 20px;
+  font-size: 1.5rem;
+  color: var(--accent-color);
+  text-shadow: 0 0 5px var(--accent-color);
+  text-align: center;
+}
+
+/* Responsivité */
+@media (max-width: 768px) {
+  .home-page h1 {
+    font-size: 1.5rem;
+  }
+
+  .home-page h2 {
+    font-size: 1rem;
+  }
+
+  .mode-selection button,
+  .multiplayer-options button {
+    max-width: 150px;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .multiplayer-options {
+    width: 100%;
+  }
+
+  .multiplayer-options > * {
+    width: 80%;
+    max-width: 300px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1365px) {
+  .home-page h1 {
+    font-size: 2rem;
+  }
+
+  .home-page h2 {
+    font-size: 1.5rem;
+  }
+
+  .mode-selection button,
+  .multiplayer-options button {
+    max-width: 180px;
+    font-size: 1.05rem;
+    padding: 0.6rem 1.2rem;
+  }
+
+  .multiplayer-options > * {
+    width: 80%;
+    max-width: 400px;
+  }
+}
+
+@media (min-width: 1366px) {
+  .home-page h1 {
+    font-size: 3rem;
+  }
+
+  .home-page h2 {
+    font-size: 1.8rem;
+  }
+
+  .mode-selection button,
+  .multiplayer-options button {
+    max-width: 220px;
+    font-size: 1.2rem;
+    padding: 0.6rem 1.2rem;
+  }
+
+  .multiplayer-options > * {
+    width: 60%;
+    max-width: 500px;
+  }
 }

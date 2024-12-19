@@ -165,10 +165,21 @@ function handleGameEvents(socket, io) {
       });
       io.to(roomId).emit("roomClosed");
       delete rooms[roomId];
+    } else if (room && room.status === "in-progress") {
+      // La partie est en cours et un joueur quitte : émettre 'gameOver' pour les autres joueurs
+      room.players.forEach((playerId) => {
+        io.to(playerId).emit("gameOver", {
+          loserId: socket.id,
+          winnerId: playerId, // Le joueur restant est le gagnant
+        });
+      });
+      room.status = "finished"; // Marquer la room comme terminée
     } else {
       const availableRooms = getAvailableRooms();
       io.emit("availableRooms", availableRooms);
-      io.to(roomId).emit("playerLeft", { playerId: socket.id });
+      if (room) {
+        io.to(roomId).emit("playerLeft", { playerId: socket.id });
+      }
     }
   });
 
@@ -313,15 +324,30 @@ function handleGameEvents(socket, io) {
       const roomId = player.roomId;
       leaveRoom(roomId, socket.id);
       removePlayer(socket.id);
-      // Après avoir supprimé le joueur et quitté la room
+      console.log(`Joueur ${socket.id} a quitté la room ${roomId}`);
+
+      const room = rooms[roomId];
+      if (room && room.status === "in-progress") {
+        // Émettre 'gameOver' aux autres joueurs
+        room.players.forEach((playerId) => {
+          io.to(playerId).emit("gameOver", {
+            loserId: socket.id,
+            winnerId: playerId, // Le joueur restant est le gagnant
+          });
+        });
+        room.status = "finished"; // Marquer la room comme terminée
+      }
+
       const availableRooms = getAvailableRooms();
       io.emit("availableRooms", availableRooms);
-      // Informer les autres joueurs de la salle
-      io.to(roomId).emit("playerLeft", { playerId: socket.id });
-      console.log(`Joueur ${socket.id} a quitté la room ${roomId}`);
+      if (room) {
+        io.to(roomId).emit("playerLeft", { playerId: socket.id });
+      }
     }
     console.log("Joueur déconnecté :", socket.id);
   });
+
+  // ... autres événements ...
 }
 
 function getWinnerId(roomId, loserId) {

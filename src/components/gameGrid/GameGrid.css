@@ -6,8 +6,10 @@
   grid-template-columns: repeat(10, 1fr);
   gap: 1px;
   background-color: var(--grid-background);
-  width: 200px;
-  height: 400px;
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  aspect-ratio: 10 / 20; /* Maintient le ratio 10:20 */
   border: 2px solid var(--accent-color);
   box-shadow: 0 0 20px var(--accent-color);
   transition: box-shadow 0.3s ease;
@@ -35,6 +37,27 @@
 
 .filled-malus {
   background-color: #ff00ff; /* Violet/rose néon */
-  /* Vous pouvez ajouter des effets visuels supplémentaires si souhaité */
-  box-shadow: 0 0 10px #ff00ff; /* pour un effet néon */
+  box-shadow: 0 0 10px #ff00ff; /* Effet néon */
+}
+
+/* Responsivité */
+@media (max-width: 768px) {
+  .game-grid {
+    max-width: 90vw;
+    aspect-ratio: 10 / 20;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1365px) {
+  .game-grid {
+    max-width: 60vw;
+    aspect-ratio: 10 / 20;
+  }
+}
+
+@media (min-width: 1366px) {
+  .game-grid {
+    max-width: 500px;
+    aspect-ratio: 10 / 20;
+  }
 }

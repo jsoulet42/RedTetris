@@ -1,11 +1,11 @@
-/* ./src/components/PlayerNameInput/PlayerNameInput.css */
+/* ./src/components/PlayerNameInput.css */
 
 .player-name-input {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  width: 100%;
   padding: 20px;
   box-sizing: border-box;
   background: linear-gradient(135deg, #1f4037, #99f2c8); /* Fond dynamique */
@@ -22,15 +22,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
 }
 
 .player-name-input input {
-  padding: 10px;
+  padding: 0.6rem 1rem;
   font-size: 1.1rem;
   border: 2px solid var(--accent-color);
   border-radius: 5px;
   margin-bottom: 20px;
-  width: 300px;
+  width: 80%;
+  max-width: 300px;
   background-color: rgba(255, 255, 255, 0.1);
   color: var(--text-color);
 }
@@ -40,7 +42,7 @@
 }
 
 .player-name-input button {
-  padding: 10px 20px;
+  padding: 0.6rem 1.2rem;
   font-size: 1.1rem;
   background: linear-gradient(
     45deg,
@@ -53,9 +55,63 @@
   border-radius: 5px;
   cursor: pointer;
   transition: box-shadow 0.3s ease, transform 0.2s ease;
+  width: 100%;
+  max-width: 220px;
 }
 
 .player-name-input button:hover {
   box-shadow: 0 0 20px var(--accent-color);
   transform: scale(1.05);
+}
+
+/* Responsivité spécifique */
+@media (max-width: 768px) {
+  .player-name-input h2 {
+    font-size: 1.5rem;
+  }
+
+  .player-name-input input {
+    width: 80%;
+    max-width: 250px;
+  }
+
+  .player-name-input button {
+    max-width: 150px;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1365px) {
+  .player-name-input h2 {
+    font-size: 1.8rem;
+  }
+
+  .player-name-input input {
+    width: 80%;
+    max-width: 300px;
+  }
+
+  .player-name-input button {
+    max-width: 180px;
+    font-size: 1.05rem;
+    padding: 0.6rem 1.2rem;
+  }
+}
+
+@media (min-width: 1366px) {
+  .player-name-input h2 {
+    font-size: 2rem;
+  }
+
+  .player-name-input input {
+    width: 80%;
+    max-width: 300px;
+  }
+
+  .player-name-input button {
+    max-width: 220px;
+    font-size: 1.1rem;
+    padding: 0.75rem 1.5rem;
+  }
 }

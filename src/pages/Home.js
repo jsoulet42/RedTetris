@@ -6,6 +6,7 @@ import socket from "../socket";
 import "./Home.css";
 import RoomList from "../components/RoomList";
 import CreateRoom from "../components/CreateRoom";
+import { getPlayerCumulativeScore } from "../utils/scoreUtils";
 
 function Home() {
   const [mode, setMode] = React.useState(null);
@@ -46,9 +47,16 @@ function Home() {
     }
   };
 
+  const cumulativeScore = playerName ? getPlayerCumulativeScore(playerName) : 0;
+
   return (
     <div className="home-page">
       <h1>Bienvenue sur Red Tetris</h1>
+      <h2>Bonjour {playerName} !</h2>
+      {/* Afficher le score cumulatif */}
+      <div className="cumulative-score">
+        <h2>Score Total: {cumulativeScore}</h2>
+      </div>
       {!mode && (
         <div className="mode-selection">
           <button onClick={() => handleModeSelection("solo")}>

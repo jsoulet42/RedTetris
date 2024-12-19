@@ -2,75 +2,150 @@
 
 /* Petits écrans : Téléphones et tablettes */
 @media (max-width: 768px) {
-  /* Grille principale */
+  /* Général */
+  body,
+  html,
+  #root,
+  .App {
+    overflow-x: hidden;
+  }
+
+  /* Titres */
+  h1 {
+    font-size: 1.2rem; /* Corrigé de 0.2rem à 1.2rem */
+  }
+
+  h2 {
+    font-size: 0.9rem; /* Corrigé de 0.2rem à 0.9rem */
+  }
+
+  /* Boutons Spécifiques */
+  .quit-button,
+  .create-room button,
+  .mode-selection button,
+  .multiplayer-options button {
+    font-size: 0.9rem; /* Ajusté à une taille lisible */
+    padding: 0.4rem 0.8rem; /* Ajusté pour une meilleure apparence */
+    max-width: 150px; /* Ajusté pour plus de flexibilité */
+  }
+
+  /* Game Grid */
   .game-grid {
-    width: 90vw;
-    height: 60vh;
+    width: 40vw;
+    height: 50vh;
   }
 
-  /* Grille adversaire :
-	   On utilise un pourcentage de l'écran (vw) pour qu'elle soit plus petite.
-	   Ratio original: height/width ≈ 2.33 (140/60)
-	   Si on prend width: 15vw, height ≈ 15vw * 2.33 = ~35vw de haut */
+  /* Opponent Grid */
   .opponent-grid {
-    width: 15vw;
-    height: calc(15vw * (140 / 60));
+    width: 10vw;
+    height: calc(8vw * (140 / 60));
   }
 
-  .game-room h1 {
-    font-size: 2rem;
-  }
-
-  .game-room h2 {
-    font-size: 1rem;
-  }
-
+  /* RoomList & PlayerList */
   .room-list,
   .player-list {
-    width: 150px;
+    width: 100%;
+    max-width: 150px;
   }
 
+  /* PlayerNameInput */
   .player-name-input input {
-    width: 250px;
+    width: 80%;
+    max-width: 250px;
   }
 
-  button {
-    font-size: 1rem;
-    padding: 10px;
-  }
+  /* Other Buttons */
+  /* Déjà traités ci-dessus */
 }
 
 /* Moyens écrans : Tablettes et petits laptops */
 @media (min-width: 769px) and (max-width: 1365px) {
-  /* Grille principale */
+  /* Général */
+  body,
+  html,
+  #root,
+  .App {
+    overflow-x: hidden;
+  }
+
+  /* Titres */
+  h1 {
+    font-size: 2.5rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  /* Boutons Spécifiques */
+  .quit-button,
+  .create-room button,
+  .mode-selection button,
+  .multiplayer-options button {
+    font-size: 1.05rem;
+    padding: 0.6rem 1.2rem;
+    max-width: 180px;
+  }
+
+  /* Game Grid */
   .game-grid {
     width: 60vw;
     height: 70vh;
   }
 
-  /* Grille adversaire :
-	   On réduit encore la taille pour garder la différence.
-	   width: 8vw, height: ~8vw*2.33 ≈ 18.6vw
-	*/
+  /* Opponent Grid */
   .opponent-grid {
     width: 8vw;
     height: calc(8vw * (140 / 60));
   }
 
-  h1,
-  h2 {
-    font-size: 2rem;
+  /* RoomList & PlayerList */
+  .room-list,
+  .player-list {
+    width: 100%;
+    max-width: 180px;
   }
 
-  button {
-    font-size: 1.2rem;
-    padding: 12px;
+  /* PlayerNameInput */
+  .player-name-input input {
+    width: 80%;
+    max-width: 300px;
   }
+
+  /* Other Buttons */
+  /* Déjà traités ci-dessus */
 }
 
 /* Grands écrans : Laptops et écrans larges */
 @media (min-width: 1366px) {
-  /* Grille principale */
+  /* Général */
+  body,
+  html,
+  #root,
+  .App {
+    overflow: hidden;
+  }
+
+  /* Titres */
+  h1 {
+    font-size: 3.5rem;
+  }
+
+  h2 {
+    font-size: 2rem;
+  }
+
+  /* Boutons Spécifiques */
+  .quit-button,
+  .create-room button,
+  .mode-selection button,
+  .multiplayer-options button {
+    font-size: 1.1rem;
+    padding: 0.75rem 1.5rem;
+    max-width: 220px;
+  }
+
+  /* Game Grid */
   .game-grid {
     width: 20vw;
     height: 60vh;
@@ -78,31 +153,22 @@
     max-height: 800px;
   }
 
-  /* Grille adversaire :
-	   Retour à la taille fixe définie à l'origine.
-	*/
+  /* Opponent Grid */
   .opponent-grid {
     width: 60px;
     height: 140px;
   }
 
-  .game-room h1,
-  .solo-game h1 {
-    font-size: 3.5rem;
+  /* RoomList & PlayerList */
+  .room-list,
+  .player-list {
+    width: 100%;
+    max-width: 220px;
   }
 
-  .game-room h2,
-  .solo-game h2 {
-    font-size: 2rem;
-  }
-
-  .quit-button {
-    padding: 15px 30px;
-    font-size: 1rem;
-  }
-
-  button {
-    font-size: 1rem;
-    padding: 15px;
+  /* PlayerNameInput */
+  .player-name-input input {
+    width: 80%;
+    max-width: 300px;
   }
 }

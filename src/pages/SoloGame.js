@@ -7,7 +7,8 @@ import socket from "../socket";
 import { useNavigate } from "react-router-dom";
 import { resetGameState } from "../redux/actions/gameActions";
 import "./SoloGame.css";
-import GameOverMessage from "../components/GameOverMessage"; // Import ajouté
+import GameOverMessage from "../components/GameOverMessage";
+import { updateCumulativeScore } from "../utils/scoreUtils";
 
 function SoloGame() {
   const gameRoomRef = useRef(null);
@@ -70,23 +71,33 @@ function SoloGame() {
     };
   }, [roomId, playerName, gameStateReceived]);
 
-  // Écouter l'événement de fin de partie
+  // Écouter l'événement de fin de partie et mettre à jour le score cumulatif
   useEffect(() => {
     socket.on("gameOver", ({ loserId, winnerId }) => {
       setWinnerId(winnerId);
       if (socket.id === loserId) {
         setGameOverMessage("Défaite : Vous avez perdu !");
+        // Mettre à jour le score cumulatif
+        if (playerName) {
+          updateCumulativeScore(playerName, score);
+        }
       } else if (socket.id === winnerId) {
         setGameOverMessage("Victoire : Vous avez gagné !");
+        // Mettre à jour le score cumulatif
+        if (playerName) {
+          updateCumulativeScore(playerName, score);
+        }
       }
     });
 
     return () => {
       socket.off("gameOver");
     };
-  }, [socket]);
+  }, [playerName, score]);
 
   const handleQuit = () => {
+    // Optionnel : Déjà géré via l'événement 'gameOver'
+    // Si le joueur quitte manuellement, le serveur émettra 'gameOver'
     if (roomId) {
       socket.emit("leaveRoom", { roomId });
     }

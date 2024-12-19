@@ -1,13 +1,19 @@
 /* ./src/components/CreateRoom/CreateRoom.css */
 
 .create-room {
-  margin: 10px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+  padding: 10px;
 }
 
 .create-room button {
-  width: 220px;
-  padding: 10px;
-  font-size: 1.1rem;
+  width: 100%;
+  max-width: 220px;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
   background: linear-gradient(
     45deg,
     var(--accent-color),
@@ -15,7 +21,9 @@
   );
   box-shadow: 0 0 15px var(--accent-color);
   color: var(--text-color);
+  border: none; /* Supprimer la bordure par défaut */
   border-radius: 5px;
+  cursor: pointer; /* Changer le curseur au survol */
   transition: box-shadow 0.3s ease, transform 0.2s ease;
 }
 

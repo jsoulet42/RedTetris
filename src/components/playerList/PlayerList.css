@@ -1,12 +1,13 @@
-/* ./src/components/PlayerList/PlayerList.css */
+/* ./src/components/playerList/PlayerList.css */
 
 .player-list {
-  margin: 20px 0;
-  padding: 10px;
-  border: 2px solid var(--accent-color);
-  border-radius: 10px;
+  margin: 0.2rem 0;
+  padding: 0.2rem;
+  border: 0.15rem solid var(--accent-color);
+  border-radius: 0.2rem;
   background-color: rgba(255, 255, 255, 0.1);
-  width: 200px;
+  width: 100%;
+  max-width: 220px;
   box-shadow: 0 0 10px var(--accent-color);
 }
 
@@ -19,17 +20,64 @@
 .player-list ul {
   list-style-type: none;
   padding: 0;
+  width: 100%;
 }
 
 .player-list li {
-  padding: 8px;
+  padding: 0.5rem;
   border-bottom: 1px solid #555;
   font-size: 1rem;
   color: #fff;
   display: flex;
   justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .player-list li:last-child {
   border-bottom: none;
+}
+
+/* Responsivité */
+@media (max-width: 768px) {
+  .player-list {
+    max-width: 100px; /* Augmenté de 40px à 150px */
+    height: 6rem; /* Ajouté */
+  }
+
+  .player-list h2 {
+    font-size: 0.2rem; /* Augmenté de 0.8rem à 1rem */
+  }
+
+  .player-list li {
+    font-size: 0.2rem; /* Augmenté de 0.2rem à 0.9rem */
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1365px) {
+  .player-list {
+    max-width: 180px;
+  }
+
+  .player-list h2 {
+    font-size: 1.4rem;
+  }
+
+  .player-list li {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 1366px) {
+  .player-list {
+    max-width: 220px;
+  }
+
+  .player-list h2 {
+    font-size: 1.5rem;
+  }
+
+  .player-list li {
+    font-size: 1rem;
+  }
 }

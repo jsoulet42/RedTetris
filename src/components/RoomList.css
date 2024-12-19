@@ -4,6 +4,8 @@
   margin-top: 20px;
   width: 100%;
   max-width: 400px;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
 .room-list h2 {
@@ -17,6 +19,7 @@
 .room-list ul {
   list-style-type: none;
   padding: 0;
+  width: 100%;
 }
 
 .room-list li {
@@ -29,11 +32,17 @@
   background-color: rgba(255, 255, 255, 0.05);
   border-radius: 5px;
   box-shadow: 0 0 5px var(--accent-color);
+  width: 100%;
+}
+
+.room-list li span {
+  font-size: 1rem;
+  color: var(--text-color);
 }
 
 .room-list button {
   margin-top: 10px;
-  padding: 5px 10px;
+  padding: 0.4rem 0.8rem;
   background: linear-gradient(
     45deg,
     var(--accent-color),
@@ -44,6 +53,8 @@
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.2s ease;
+  width: 100%;
+  max-width: 150px;
 }
 
 .room-list button:hover {
