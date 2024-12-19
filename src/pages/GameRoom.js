@@ -116,35 +116,42 @@ function GameRoom() {
   return (
     <div className="game-room-wrapper">
       <div className="game-room" ref={gameRoomRef} tabIndex="0">
-        <h1>Salle de Jeu - {roomId}</h1>
+        <h2>Salle de Jeu - {roomId}</h2>
         <h2>Joueur : {playerName}</h2>
         {gameStarted || mode === "solo" ? (
-          <div className="game-content">
-            <div className="game-grid-container">
-              <GameGrid />
+          <div className="layout">
+            <div className="sidebar">
+              {mode === "multiplayer" && <PlayerList />}
+              <button className="quit-button" onClick={handleQuit}>
+                Quitter la partie
+              </button>
             </div>
-            {mode === "multiplayer" && (
-              <div className="opponents-container">
-                {opponents &&
-                  opponents.valueSeq().map((opponent) => (
-                    <div key={opponent.get("playerId")}>
-                      <h3>{opponent.get("name")}</h3>
-                      <OpponentGrid grid={opponent.get("grid")} />
-                    </div>
-                  ))}
+            <div className="main-content">
+              <div className="game-content">
+                <div className="game-grid-container">
+                  <GameGrid />
+                </div>
+                {mode === "multiplayer" && (
+                  <div className="opponents-container">
+                    {opponents &&
+                      opponents.valueSeq().map((opponent) => (
+                        <div key={opponent.get("playerId")}>
+                          <h3>{opponent.get("name")}</h3>
+                          <OpponentGrid grid={opponent.get("grid")} />
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
-            )}
+              <div className="score-board">
+                <h2>Score: {score}</h2>
+              </div>
+            </div>
           </div>
         ) : (
           <p>En attente d'autres joueurs...</p>
         )}
-        {mode === "multiplayer" && <PlayerList />}
-        <div className="score-board">
-          <h2>Score: {score}</h2>
-        </div>
-        <button className="quit-button" onClick={handleQuit}>
-          Quitter la partie
-        </button>
+
         {gameOverMessage && (
           <GameOverMessage
             message={gameOverMessage}

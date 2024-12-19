@@ -245,11 +245,11 @@ import { useSelector, useDispatch } from "react-redux";
 import GameGrid from "../components/gameGrid/GameGrid";
 import PlayerList from "../components/playerList/PlayerList";
 import socket from "../socket";
-import { updateGameState, resetGameState } from "../redux/actions/gameActions";
 import "./GameRoom.css";
 import { useNavigate } from "react-router-dom";
 import OpponentGrid from "../components/opponentGrid/OpponentGrid";
 import GameOverMessage from "../components/GameOverMessage"; // Import ajouté
+import { resetGameState } from "../redux/actions/gameActions";
 
 function GameRoom() {
   const { roomId } = useParams();
@@ -257,10 +257,10 @@ function GameRoom() {
   const gameRoomRef = useRef(null);
   const score = useSelector((state) => state.game.get("score"));
   const mode = useSelector((state) => state.game.get("mode"));
-  const dispatch = useDispatch();
   const gameStarted = useSelector((state) => state.game.get("gameStarted"));
   const playerName = localStorage.getItem("playerName");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const opponents = useSelector((state) => state.game.get("opponents"));
   const [winnerId, setWinnerId] = useState(null);
 
@@ -333,51 +333,72 @@ function GameRoom() {
     return () => {
       socket.off("gameOver");
     };
-  }, [socket]);
+  }, []);
 
   const handleQuit = () => {
     socket.emit("leaveRoom", { roomId });
     navigate("/");
   };
 
+  useEffect(() => {
+    socket.on("roomClosed", () => {
+      // Réinitialiser l'état du jeu côté client
+      dispatch(resetGameState());
+      navigate("/"); // Rediriger vers le menu principal
+    });
+
+    return () => {
+      socket.off("roomClosed");
+    };
+  }, [navigate, dispatch]);
+
   return (
-    <div className="game-room" ref={gameRoomRef} tabIndex="0">
-      <h1>Salle de Jeu - {roomId}</h1>
-      <h2>Joueur : {playerName}</h2>
-      {gameStarted || mode === "solo" ? (
-        <div className="game-content">
-          <div className="game-grid-container">
-            <GameGrid />
-          </div>
-          {mode === "multiplayer" && (
-            <div className="opponents-container">
-              {opponents &&
-                opponents.valueSeq().map((opponent) => (
-                  <div key={opponent.get("playerId")}>
-                    <h3>{opponent.get("name")}</h3>
-                    <OpponentGrid grid={opponent.get("grid")} />
-                  </div>
-                ))}
+    <div className="game-room-wrapper">
+      <div className="game-room" ref={gameRoomRef} tabIndex="0">
+        <h2>Salle de Jeu - {roomId}</h2>
+        <h2>Joueur : {playerName}</h2>
+        {gameStarted || mode === "solo" ? (
+          <div className="layout">
+            <div className="sidebar">
+              {mode === "multiplayer" && <PlayerList />}
+              <button className="quit-button" onClick={handleQuit}>
+                Quitter la partie
+              </button>
             </div>
-          )}
-        </div>
-      ) : (
-        <p>En attente d'autres joueurs...</p>
-      )}
-      {mode === "multiplayer" && <PlayerList />}
-      <div className="score-board">
-        <h2>Score: {score}</h2>
+            <div className="main-content">
+              <div className="game-content">
+                <div className="game-grid-container">
+                  <GameGrid />
+                </div>
+                {mode === "multiplayer" && (
+                  <div className="opponents-container">
+                    {opponents &&
+                      opponents.valueSeq().map((opponent) => (
+                        <div key={opponent.get("playerId")}>
+                          <h3>{opponent.get("name")}</h3>
+                          <OpponentGrid grid={opponent.get("grid")} />
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+              <div className="score-board">
+                <h2>Score: {score}</h2>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p>En attente d'autres joueurs...</p>
+        )}
+
+        {gameOverMessage && (
+          <GameOverMessage
+            message={gameOverMessage}
+            onAccept={handleQuit}
+            isWinner={socket.id === winnerId}
+          />
+        )}
       </div>
-      <button className="quit-button" onClick={handleQuit}>
-        Quitter la partie
-      </button>
-      {gameOverMessage && (
-        <GameOverMessage
-          message={gameOverMessage}
-          onAccept={handleQuit}
-          isWinner={socket.id === winnerId}
-        />
-      )}
     </div>
   );
 }
@@ -448,14 +469,31 @@ export default GameRoom;
   overflow: hidden;
 }
 
+.game-room {
+  transform-origin: top left;
+  /* On suppose que le design idéal fait 1200px de large et 900px de haut
+	   Ajustez ces valeurs si nécessaire */
+  transform: scale(min(100vw/1200, 100vh/700));
+}
+
+.game-room-wrapper {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
 .game-room h1 {
-  font-size: 2.5rem;
+  font-size: 1rem;
   margin-bottom: 10px;
   text-shadow: 0 0 10px var(--accent-color);
 }
 
 .game-room h2 {
-  font-size: 1.2rem;
+  font-size: 1rem;
   margin-bottom: 20px;
 }
 
@@ -496,6 +534,29 @@ export default GameRoom;
 
 .quit-button:hover {
   box-shadow: 0 0 15px #ff4d4f;
+}
+
+.layout {
+  display: flex;
+  flex-direction: row; /* Met la sidebar à gauche, main-content à droite */
+  width: 100%;
+  height: 100%;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Aligner le contenu à gauche */
+  justify-content: flex-start;
+  margin-right: 20px; /* Espace entre la sidebar et le contenu principal */
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
 }
 -e 
 
@@ -1075,20 +1136,20 @@ export default GameOverMessage;
 ==== ./src/components/opponentGrid/OpponentGrid.css ====
 /* ./src/components/OpponentGrid/OpponentGrid.css */
 
-.game-grid {
+.opponent-grid {
   display: grid;
   grid-template-rows: repeat(20, 1fr);
   grid-template-columns: repeat(10, 1fr);
   gap: 1px;
   background-color: var(--grid-background);
-  width: 60px; /* Taille réduite pour les miniatures */
+  width: 60px;
   height: 140px;
   border: 2px solid var(--accent-color);
   box-shadow: 0 0 10px var(--accent-color);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.game-grid:hover {
+.opponent-grid:hover {
   transform: scale(1.05);
   box-shadow: 0 0 25px var(--accent-color);
 }
@@ -1108,6 +1169,12 @@ export default GameOverMessage;
 .grid-cell.filled {
   background-color: var(--cell-filled);
 }
+
+.filled-malus {
+  background-color: #ff00ff; /* Violet/rose néon */
+  /* Vous pouvez ajouter des effets visuels supplémentaires si souhaité */
+  box-shadow: 0 0 10px #ff00ff; /* pour un effet néon */
+}
 -e 
 
 ==== ./src/components/opponentGrid/OpponentGrid.js ====
@@ -1123,13 +1190,15 @@ function OpponentGrid({ grid }) {
   }
 
   return (
-    <div className="game-grid">
+    <div className="opponent-grid">
       {grid.map((row, rowIndex) => (
         <div key={rowIndex} className="grid-row">
           {row.map((cell, colIndex) => (
             <div
               key={colIndex}
-              className={`grid-cell ${cell ? "filled" : ""}`}
+              className={`grid-cell ${
+                cell === 1 ? "filled" : cell === 2 ? "filled-malus" : ""
+              }`}
             ></div>
           ))}
         </div>
@@ -1324,6 +1393,12 @@ export default PlayerNameInput;
 .grid-cell.filled {
   background-color: var(--cell-filled);
 }
+
+.filled-malus {
+  background-color: #ff00ff; /* Violet/rose néon */
+  /* Vous pouvez ajouter des effets visuels supplémentaires si souhaité */
+  box-shadow: 0 0 10px #ff00ff; /* pour un effet néon */
+}
 -e 
 
 ==== ./src/components/gameGrid/GameGrid.js ====
@@ -1362,7 +1437,9 @@ function GameGrid() {
           {row.map((cell, colIndex) => (
             <div
               key={colIndex}
-              className={`grid-cell ${cell ? "filled" : ""}`}
+              className={`grid-cell ${
+                cell === 1 ? "filled" : cell === 2 ? "filled-malus" : ""
+              }`}
             ></div>
           ))}
         </div>
@@ -1488,9 +1565,19 @@ export default App;
 
 /* Petits écrans : Téléphones et tablettes */
 @media (max-width: 768px) {
+  /* Grille principale */
   .game-grid {
     width: 90vw;
     height: 60vh;
+  }
+
+  /* Grille adversaire :
+	   On utilise un pourcentage de l'écran (vw) pour qu'elle soit plus petite.
+	   Ratio original: height/width ≈ 2.33 (140/60)
+	   Si on prend width: 15vw, height ≈ 15vw * 2.33 = ~35vw de haut */
+  .opponent-grid {
+    width: 15vw;
+    height: calc(15vw * (140 / 60));
   }
 
   .game-room h1 {
@@ -1518,9 +1605,19 @@ export default App;
 
 /* Moyens écrans : Tablettes et petits laptops */
 @media (min-width: 769px) and (max-width: 1365px) {
+  /* Grille principale */
   .game-grid {
     width: 60vw;
     height: 70vh;
+  }
+
+  /* Grille adversaire :
+	   On réduit encore la taille pour garder la différence.
+	   width: 8vw, height: ~8vw*2.33 ≈ 18.6vw
+	*/
+  .opponent-grid {
+    width: 8vw;
+    height: calc(8vw * (140 / 60));
   }
 
   h1,
@@ -1536,11 +1633,20 @@ export default App;
 
 /* Grands écrans : Laptops et écrans larges */
 @media (min-width: 1366px) {
+  /* Grille principale */
   .game-grid {
     width: 20vw;
-    height: 80vh;
+    height: 60vh;
     max-width: 500px;
     max-height: 800px;
+  }
+
+  /* Grille adversaire :
+	   Retour à la taille fixe définie à l'origine.
+	*/
+  .opponent-grid {
+    width: 60px;
+    height: 140px;
   }
 
   .game-room h1,
@@ -1555,11 +1661,11 @@ export default App;
 
   .quit-button {
     padding: 15px 30px;
-    font-size: 1.5rem;
+    font-size: 1rem;
   }
 
   button {
-    font-size: 1.5rem;
+    font-size: 1rem;
     padding: 15px;
   }
 }
@@ -1585,7 +1691,7 @@ const { Server } = require("socket.io");
 const handleGameEvents = require("./sockets/gameEvents");
 const { players } = require("./game/playerManager");
 const { rooms } = require("./game/roomManager");
-const { isGameOver } = require("../server/game/gameLogic");
+const { isGameOver, addMalusLines } = require("./game/gameLogic"); // Importer addMalusLines
 
 const {
   movePiece,
@@ -1664,24 +1770,17 @@ setInterval(() => {
             "DEBUG : Grille après empilement dans la boucle principale:",
             player.grid
           );
-
           if (isGameOver(player.grid)) {
-            console.log(
-              "DEBUG : Game Over détecté dans la boucle principale du serveur."
-            );
-            const room = rooms[player.roomId];
-            if (room) {
-              room.status = "finished";
-            }
+            console.log("DEBUG : Game Over détecté juste après empilement");
+            room.status = "finished";
             io.to(player.roomId).emit("gameOver", {
               loserId: playerId,
               winnerId: getWinnerId(player.roomId, playerId),
             });
-            return; // Importante pour stopper la logique supplémentaire
+
+            return;
           } else {
-            console.log(
-              "DEBUG : Pas de game over après empilement dans la boucle principale."
-            );
+            console.log("DEBUG : Pas de game over après empilement");
           }
 
           // Supprimer les lignes complètes
@@ -1693,9 +1792,32 @@ setInterval(() => {
           // Mettre à jour le score
           const scoreIncrement = computeScore(linesCleared);
           player.score += scoreIncrement;
-        }
 
-        // Émettre l'état du jeu mis à jour uniquement au joueur concerné
+          // Ajouter des lignes malus aux adversaires si au moins 2 lignes sont effacées
+          if (linesCleared >= 2) {
+            const malusCount = linesCleared - 1;
+            if (malusCount > 0) {
+              // Assurez-vous que malusCount est positif
+              const opponents = room.players.filter((pId) => pId !== playerId);
+              opponents.forEach((opponentId) => {
+                const opponent = players[opponentId];
+                if (opponent) {
+                  // Ajouter les lignes malus à la grille de l'adversaire
+                  opponent.grid = addMalusLines(opponent.grid, malusCount);
+
+                  // Émettre le gameState mis à jour à l'adversaire
+                  io.to(opponentId).emit("gameState", {
+                    roomId: opponent.roomId,
+                    grid: opponent.grid,
+                    currentPiece: opponent.currentPiece,
+                    score: opponent.score,
+                    mode: opponent.mode,
+                  });
+                }
+              });
+            }
+          }
+        }
         io.to(playerId).emit("gameState", {
           roomId: player.roomId,
           grid: player.grid,
@@ -1704,24 +1826,15 @@ setInterval(() => {
           mode: player.mode,
         });
 
-        // Fonction pour envoyer opponentUpdate aux autres joueurs de la room
-        function sendOpponentUpdateToOthers(io, roomId, senderId, data) {
-          const roomSockets = io.sockets.adapter.rooms.get(roomId);
-          if (roomSockets) {
-            roomSockets.forEach((socketId) => {
-              if (socketId !== senderId) {
-                io.to(socketId).emit("opponentUpdate", data);
-              }
-            });
-          }
-        }
-
-        // Utiliser la fonction dans la boucle de jeu
-        sendOpponentUpdateToOthers(io, player.roomId, playerId, {
-          playerId: playerId,
-          name: player.name,
-          score: player.score,
-          grid: player.grid,
+        // Envoyer une mise à jour aux adversaires seulement
+        const opponents = room.players.filter((pId) => pId !== playerId);
+        opponents.forEach((opponentId) => {
+          io.to(opponentId).emit("opponentUpdate", {
+            playerId: playerId,
+            name: player.name, // Inclure le nom
+            score: player.score,
+            grid: player.grid,
+          });
         });
       }
     });
@@ -1881,6 +1994,21 @@ const TETROMINOS = {
   ],
 };
 
+// Fonction pour ajouter des lignes malus à une grille
+function addMalusLines(grid, malusCount) {
+  const newLines = Array.from({ length: malusCount }, () =>
+    Array(GRID_WIDTH).fill(2)
+  );
+  let updatedGrid = [...grid, ...newLines];
+
+  // Si la grille dépasse la hauteur maximale, enlever les lignes du haut
+  while (updatedGrid.length > GRID_HEIGHT) {
+    updatedGrid.shift();
+  }
+
+  return updatedGrid;
+}
+
 // Fonction pour générer une pièce aléatoire
 const generateRandomPiece = () => {
   const pieces = Object.keys(TETROMINOS);
@@ -1960,7 +2088,7 @@ function isValidPosition(grid, piece, newX, newY) {
           gridX < 0 ||
           gridX >= GRID_WIDTH ||
           gridY >= GRID_HEIGHT ||
-          (gridY >= 0 && grid[gridY][gridX] === 1)
+          (gridY >= 0 && grid[gridY][gridX] !== 0)
         ) {
           return false;
         }
@@ -1983,7 +2111,8 @@ function stackPiece(grid, piece) {
           gridY >= 0 &&
           gridY < GRID_HEIGHT &&
           gridX >= 0 &&
-          gridX < GRID_WIDTH
+          gridX < GRID_WIDTH &&
+          newGrid[gridY][gridX] === 0
         ) {
           newGrid[gridY][gridX] = 1;
         }
@@ -1998,16 +2127,24 @@ function stackPiece(grid, piece) {
 function clearCompleteLines(grid) {
   let linesCleared = 0;
   const newGrid = grid.filter((row) => {
+    // On vérifie si la ligne est complète en "1"
     const isComplete = row.every((cell) => cell === 1);
-    if (isComplete) {
+    // On vérifie si la ligne contient des cellules "2" (malus)
+    const containsMalus = row.includes(2);
+
+    // On ne supprime la ligne que si elle est complète (en 1)
+    // ET qu'elle ne contient pas de malus (2)
+    if (isComplete && !containsMalus) {
       linesCleared += 1;
-      return false; // Exclure la ligne complète
+      return false; // supprimer cette ligne
     }
-    return true; // Garder la ligne incomplète
+    return true; // conserver cette ligne
   });
+
   const emptyLines = Array(linesCleared)
     .fill(0)
     .map(() => Array(GRID_WIDTH).fill(0));
+
   return {
     grid: emptyLines.concat(newGrid),
     linesCleared,
@@ -2031,6 +2168,7 @@ module.exports = {
   stackPiece,
   clearCompleteLines,
   isGameOver,
+  addMalusLines,
 };
 -e 
 
@@ -2083,6 +2221,7 @@ const {
   dropPiece,
   stackPiece,
   clearCompleteLines,
+  addMalusLines,
 } = require("../game/gameLogic");
 const { addPlayer, removePlayer, players } = require("../game/playerManager");
 const {
@@ -2224,17 +2363,25 @@ function handleGameEvents(socket, io) {
 
   // Gestion de l'événement 'leaveRoom' pour tous les modes
   socket.on("leaveRoom", ({ roomId }) => {
+    const room = rooms[roomId];
     leaveRoom(roomId, socket.id);
     socket.leave(roomId);
     removePlayer(socket.id);
     console.log(`Joueur ${socket.id} a quitté la room ${roomId}`);
 
-    // Mettre à jour la liste des rooms disponibles
-    const availableRooms = getAvailableRooms();
-    io.emit("availableRooms", availableRooms); // Notifier tous les clients
-
-    // Informer les autres joueurs de la salle
-    io.to(roomId).emit("playerLeft", { playerId: socket.id });
+    if (room && room.status === "finished") {
+      room.players.forEach((playerId) => {
+        socket.leave(roomId);
+        removePlayer(playerId);
+        console.log(`Joueur ${playerId} a quitté la room ${roomId}`);
+      });
+      io.to(roomId).emit("roomClosed");
+      delete rooms[roomId];
+    } else {
+      const availableRooms = getAvailableRooms();
+      io.emit("availableRooms", availableRooms);
+      io.to(roomId).emit("playerLeft", { playerId: socket.id });
+    }
   });
 
   // Gérer les déplacements des pièces
@@ -2248,22 +2395,6 @@ function handleGameEvents(socket, io) {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
         console.log("DEBUG : Grille après empilement :", player.grid);
-
-        if (isGameOver(player.grid)) {
-          console.log("DEBUG : Game Over détecté juste après empilement");
-          const room = rooms[player.roomId];
-          if (room) {
-            room.status = "finished";
-          }
-          io.to(player.roomId).emit("gameOver", {
-            loserId: socket.id,
-            winnerId: getWinnerId(player.roomId, socket.id),
-          });
-          return; // Important pour sortir et ne plus continuer l'exécution
-        } else {
-          console.log("DEBUG : Pas de game over après empilement");
-        }
-
         player.currentPiece = generateRandomPiece();
 
         // Supprimer les lignes complètes
@@ -2273,6 +2404,30 @@ function handleGameEvents(socket, io) {
         // Mettre à jour le score en fonction des lignes supprimées
         const scoreIncrement = computeScore(linesCleared);
         player.score += scoreIncrement;
+        // Ajouter des lignes malus aux adversaires si au moins 2 lignes sont effacées
+        if (linesCleared >= 2) {
+          const malusCount = linesCleared - 1;
+          const room = rooms[player.roomId];
+          if (room) {
+            const opponents = room.players.filter((pId) => pId !== socket.id);
+            opponents.forEach((opponentId) => {
+              const opponent = players[opponentId];
+              if (opponent) {
+                // Ajouter les lignes malus à la grille de l'adversaire
+                opponent.grid = addMalusLines(opponent.grid, malusCount);
+
+                // Émettre le gameState mis à jour à l'adversaire
+                io.to(opponentId).emit("gameState", {
+                  roomId: opponent.roomId,
+                  grid: opponent.grid,
+                  currentPiece: opponent.currentPiece,
+                  score: opponent.score,
+                  mode: opponent.mode,
+                });
+              }
+            });
+          }
+        }
       }
       io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
@@ -2280,14 +2435,6 @@ function handleGameEvents(socket, io) {
         currentPiece: player.currentPiece,
         score: player.score,
         mode: player.mode,
-      });
-
-      // Envoyer une mise à jour aux autres joueurs de la room
-      socket.broadcast.to(player.roomId).emit("opponentUpdate", {
-        playerId: socket.id,
-        name: players[socket.id].name, // Inclure le nom
-        score: player.score,
-        grid: players[socket.id].grid,
       });
     }
   });
@@ -2327,18 +2474,6 @@ function handleGameEvents(socket, io) {
         // Empiler la pièce sur la grille
         player.grid = stackPiece(player.grid, player.currentPiece);
         console.log("DEBUG : Grille après empilement :", player.grid);
-
-        if (isGameOver(player.grid)) {
-          console.log("DEBUG : Game Over détecté juste après empilement");
-          io.to(player.roomId).emit("gameOver", {
-            loserId: socket.id,
-            winnerId: getWinnerId(player.roomId, socket.id),
-          });
-          return; // Important pour sortir et ne plus continuer l'exécution
-        } else {
-          console.log("DEBUG : Pas de game over après empilement");
-        }
-
         player.currentPiece = generateRandomPiece();
         // Supprimer les lignes complètes
         const { grid: newGrid, linesCleared } = clearCompleteLines(player.grid);
@@ -2347,6 +2482,31 @@ function handleGameEvents(socket, io) {
         // Mettre à jour le score en fonction des lignes supprimées
         const scoreIncrement = computeScore(linesCleared);
         player.score += scoreIncrement;
+
+        // Ajouter des lignes malus aux adversaires si au moins 2 lignes sont effacées
+        if (linesCleared >= 2) {
+          const malusCount = linesCleared - 1;
+          const room = rooms[player.roomId];
+          if (room) {
+            const opponents = room.players.filter((pId) => pId !== socket.id);
+            opponents.forEach((opponentId) => {
+              const opponent = players[opponentId];
+              if (opponent) {
+                // Ajouter les lignes malus à la grille de l'adversaire
+                opponent.grid = addMalusLines(opponent.grid, malusCount);
+
+                // Émettre le gameState mis à jour à l'adversaire
+                io.to(opponentId).emit("gameState", {
+                  roomId: opponent.roomId,
+                  grid: opponent.grid,
+                  currentPiece: opponent.currentPiece,
+                  score: opponent.score,
+                  mode: opponent.mode,
+                });
+              }
+            });
+          }
+        }
       }
       io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
@@ -2354,14 +2514,6 @@ function handleGameEvents(socket, io) {
         currentPiece: player.currentPiece,
         score: player.score,
         mode: player.mode,
-      });
-
-      // Envoyer une mise à jour aux autres joueurs de la room
-      socket.broadcast.to(player.roomId).emit("opponentUpdate", {
-        playerId: socket.id,
-        name: players[socket.id].name,
-        score: player.score,
-        grid: players[socket.id].grid,
       });
     }
   });

@@ -9,6 +9,7 @@ const {
   dropPiece,
   stackPiece,
   clearCompleteLines,
+  addMalusLines,
 } = require("../game/gameLogic");
 const { addPlayer, removePlayer, players } = require("../game/playerManager");
 const {
@@ -191,6 +192,30 @@ function handleGameEvents(socket, io) {
         // Mettre à jour le score en fonction des lignes supprimées
         const scoreIncrement = computeScore(linesCleared);
         player.score += scoreIncrement;
+        // Ajouter des lignes malus aux adversaires si au moins 2 lignes sont effacées
+        if (linesCleared >= 2) {
+          const malusCount = linesCleared - 1;
+          const room = rooms[player.roomId];
+          if (room) {
+            const opponents = room.players.filter((pId) => pId !== socket.id);
+            opponents.forEach((opponentId) => {
+              const opponent = players[opponentId];
+              if (opponent) {
+                // Ajouter les lignes malus à la grille de l'adversaire
+                opponent.grid = addMalusLines(opponent.grid, malusCount);
+
+                // Émettre le gameState mis à jour à l'adversaire
+                io.to(opponentId).emit("gameState", {
+                  roomId: opponent.roomId,
+                  grid: opponent.grid,
+                  currentPiece: opponent.currentPiece,
+                  score: opponent.score,
+                  mode: opponent.mode,
+                });
+              }
+            });
+          }
+        }
       }
       io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
@@ -198,14 +223,6 @@ function handleGameEvents(socket, io) {
         currentPiece: player.currentPiece,
         score: player.score,
         mode: player.mode,
-      });
-
-      // Envoyer une mise à jour aux autres joueurs de la room
-      socket.broadcast.to(player.roomId).emit("opponentUpdate", {
-        playerId: socket.id,
-        name: players[socket.id].name, // Inclure le nom
-        score: player.score,
-        grid: players[socket.id].grid,
       });
     }
   });
@@ -253,6 +270,31 @@ function handleGameEvents(socket, io) {
         // Mettre à jour le score en fonction des lignes supprimées
         const scoreIncrement = computeScore(linesCleared);
         player.score += scoreIncrement;
+
+        // Ajouter des lignes malus aux adversaires si au moins 2 lignes sont effacées
+        if (linesCleared >= 2) {
+          const malusCount = linesCleared - 1;
+          const room = rooms[player.roomId];
+          if (room) {
+            const opponents = room.players.filter((pId) => pId !== socket.id);
+            opponents.forEach((opponentId) => {
+              const opponent = players[opponentId];
+              if (opponent) {
+                // Ajouter les lignes malus à la grille de l'adversaire
+                opponent.grid = addMalusLines(opponent.grid, malusCount);
+
+                // Émettre le gameState mis à jour à l'adversaire
+                io.to(opponentId).emit("gameState", {
+                  roomId: opponent.roomId,
+                  grid: opponent.grid,
+                  currentPiece: opponent.currentPiece,
+                  score: opponent.score,
+                  mode: opponent.mode,
+                });
+              }
+            });
+          }
+        }
       }
       io.to(socket.id).emit("gameState", {
         roomId: player.roomId,
@@ -260,14 +302,6 @@ function handleGameEvents(socket, io) {
         currentPiece: player.currentPiece,
         score: player.score,
         mode: player.mode,
-      });
-
-      // Envoyer une mise à jour aux autres joueurs de la room
-      socket.broadcast.to(player.roomId).emit("opponentUpdate", {
-        playerId: socket.id,
-        name: players[socket.id].name,
-        score: player.score,
-        grid: players[socket.id].grid,
       });
     }
   });

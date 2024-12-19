@@ -33,7 +33,9 @@ function GameGrid() {
           {row.map((cell, colIndex) => (
             <div
               key={colIndex}
-              className={`grid-cell ${cell ? "filled" : ""}`}
+              className={`grid-cell ${
+                cell === 1 ? "filled" : cell === 2 ? "filled-malus" : ""
+              }`}
             ></div>
           ))}
         </div>

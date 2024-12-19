@@ -30,6 +30,21 @@ const TETROMINOS = {
   ],
 };
 
+// Fonction pour ajouter des lignes malus à une grille
+function addMalusLines(grid, malusCount) {
+  const newLines = Array.from({ length: malusCount }, () =>
+    Array(GRID_WIDTH).fill(2)
+  );
+  let updatedGrid = [...grid, ...newLines];
+
+  // Si la grille dépasse la hauteur maximale, enlever les lignes du haut
+  while (updatedGrid.length > GRID_HEIGHT) {
+    updatedGrid.shift();
+  }
+
+  return updatedGrid;
+}
+
 // Fonction pour générer une pièce aléatoire
 const generateRandomPiece = () => {
   const pieces = Object.keys(TETROMINOS);
@@ -109,7 +124,7 @@ function isValidPosition(grid, piece, newX, newY) {
           gridX < 0 ||
           gridX >= GRID_WIDTH ||
           gridY >= GRID_HEIGHT ||
-          (gridY >= 0 && grid[gridY][gridX] === 1)
+          (gridY >= 0 && grid[gridY][gridX] !== 0)
         ) {
           return false;
         }
@@ -132,7 +147,8 @@ function stackPiece(grid, piece) {
           gridY >= 0 &&
           gridY < GRID_HEIGHT &&
           gridX >= 0 &&
-          gridX < GRID_WIDTH
+          gridX < GRID_WIDTH &&
+          newGrid[gridY][gridX] === 0
         ) {
           newGrid[gridY][gridX] = 1;
         }
@@ -147,16 +163,24 @@ function stackPiece(grid, piece) {
 function clearCompleteLines(grid) {
   let linesCleared = 0;
   const newGrid = grid.filter((row) => {
+    // On vérifie si la ligne est complète en "1"
     const isComplete = row.every((cell) => cell === 1);
-    if (isComplete) {
+    // On vérifie si la ligne contient des cellules "2" (malus)
+    const containsMalus = row.includes(2);
+
+    // On ne supprime la ligne que si elle est complète (en 1)
+    // ET qu'elle ne contient pas de malus (2)
+    if (isComplete && !containsMalus) {
       linesCleared += 1;
-      return false; // Exclure la ligne complète
+      return false; // supprimer cette ligne
     }
-    return true; // Garder la ligne incomplète
+    return true; // conserver cette ligne
   });
+
   const emptyLines = Array(linesCleared)
     .fill(0)
     .map(() => Array(GRID_WIDTH).fill(0));
+
   return {
     grid: emptyLines.concat(newGrid),
     linesCleared,
@@ -180,4 +204,5 @@ module.exports = {
   stackPiece,
   clearCompleteLines,
   isGameOver,
+  addMalusLines,
 };

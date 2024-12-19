@@ -16,7 +16,7 @@
   transform-origin: top left;
   /* On suppose que le design idéal fait 1200px de large et 900px de haut
 	   Ajustez ces valeurs si nécessaire */
-  transform: scale(min(100vw/1200, 100vh/900));
+  transform: scale(min(100vw/1200, 100vh/700));
 }
 
 .game-room-wrapper {
@@ -30,13 +30,13 @@
 }
 
 .game-room h1 {
-  font-size: 2.5rem;
+  font-size: 1rem;
   margin-bottom: 10px;
   text-shadow: 0 0 10px var(--accent-color);
 }
 
 .game-room h2 {
-  font-size: 1.2rem;
+  font-size: 1rem;
   margin-bottom: 20px;
 }
 
@@ -77,4 +77,27 @@
 
 .quit-button:hover {
   box-shadow: 0 0 15px #ff4d4f;
+}
+
+.layout {
+  display: flex;
+  flex-direction: row; /* Met la sidebar à gauche, main-content à droite */
+  width: 100%;
+  height: 100%;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Aligner le contenu à gauche */
+  justify-content: flex-start;
+  margin-right: 20px; /* Espace entre la sidebar et le contenu principal */
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
 }

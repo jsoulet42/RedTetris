@@ -6,7 +6,7 @@ const { Server } = require("socket.io");
 const handleGameEvents = require("./sockets/gameEvents");
 const { players } = require("./game/playerManager");
 const { rooms } = require("./game/roomManager");
-const { isGameOver } = require("../server/game/gameLogic");
+const { isGameOver, addMalusLines } = require("./game/gameLogic"); // Importer addMalusLines
 
 const {
   movePiece,
@@ -87,10 +87,7 @@ setInterval(() => {
           );
           if (isGameOver(player.grid)) {
             console.log("DEBUG : Game Over détecté juste après empilement");
-            const room = rooms[player.roomId];
-            if (room) {
-              room.status = "finished";
-            }
+            room.status = "finished";
             io.to(player.roomId).emit("gameOver", {
               loserId: playerId,
               winnerId: getWinnerId(player.roomId, playerId),
@@ -110,9 +107,32 @@ setInterval(() => {
           // Mettre à jour le score
           const scoreIncrement = computeScore(linesCleared);
           player.score += scoreIncrement;
-        }
 
-        // Émettre l'état du jeu mis à jour uniquement au joueur concerné
+          // Ajouter des lignes malus aux adversaires si au moins 2 lignes sont effacées
+          if (linesCleared >= 2) {
+            const malusCount = linesCleared - 1;
+            if (malusCount > 0) {
+              // Assurez-vous que malusCount est positif
+              const opponents = room.players.filter((pId) => pId !== playerId);
+              opponents.forEach((opponentId) => {
+                const opponent = players[opponentId];
+                if (opponent) {
+                  // Ajouter les lignes malus à la grille de l'adversaire
+                  opponent.grid = addMalusLines(opponent.grid, malusCount);
+
+                  // Émettre le gameState mis à jour à l'adversaire
+                  io.to(opponentId).emit("gameState", {
+                    roomId: opponent.roomId,
+                    grid: opponent.grid,
+                    currentPiece: opponent.currentPiece,
+                    score: opponent.score,
+                    mode: opponent.mode,
+                  });
+                }
+              });
+            }
+          }
+        }
         io.to(playerId).emit("gameState", {
           roomId: player.roomId,
           grid: player.grid,
@@ -121,24 +141,15 @@ setInterval(() => {
           mode: player.mode,
         });
 
-        // Fonction pour envoyer opponentUpdate aux autres joueurs de la room
-        function sendOpponentUpdateToOthers(io, roomId, senderId, data) {
-          const roomSockets = io.sockets.adapter.rooms.get(roomId);
-          if (roomSockets) {
-            roomSockets.forEach((socketId) => {
-              if (socketId !== senderId) {
-                io.to(socketId).emit("opponentUpdate", data);
-              }
-            });
-          }
-        }
-
-        // Utiliser la fonction dans la boucle de jeu
-        sendOpponentUpdateToOthers(io, player.roomId, playerId, {
-          playerId: playerId,
-          name: player.name,
-          score: player.score,
-          grid: player.grid,
+        // Envoyer une mise à jour aux adversaires seulement
+        const opponents = room.players.filter((pId) => pId !== playerId);
+        opponents.forEach((opponentId) => {
+          io.to(opponentId).emit("opponentUpdate", {
+            playerId: playerId,
+            name: player.name, // Inclure le nom
+            score: player.score,
+            grid: player.grid,
+          });
         });
       }
     });
