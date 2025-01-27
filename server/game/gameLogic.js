@@ -88,19 +88,34 @@ function movePiece(piece, direction, grid) {
   }
 }
 
-// Fonction pour faire tourner une pièce
 function rotatePiece(piece, grid) {
+  // 1. Calcul de la rotation
   const newShape = piece.shape[0].map((_, index) =>
     piece.shape.map((row) => row[index]).reverse()
   );
 
-  const rotatedPiece = { ...piece, shape: newShape };
+  // 2. Création d'une copie de la pièce avec cette nouvelle forme
+  let rotatedPiece = { ...piece, shape: newShape };
 
+  // 3. Test de validité "direct"
   if (isValidPosition(grid, rotatedPiece, rotatedPiece.x, rotatedPiece.y)) {
-    return rotatedPiece;
+    return rotatedPiece; // Rotation validée, pas besoin de plus
   }
 
-  return piece; // Retourner la pièce originale si la rotation n'est pas valide
+  // 4. Tentative de wall kick : décalage à gauche ou à droite
+  const possibleOffsets = [-1, 1];
+  for (const offset of possibleOffsets) {
+    const kickedPiece = {
+      ...rotatedPiece,
+      x: rotatedPiece.x + offset,
+    };
+    if (isValidPosition(grid, kickedPiece, kickedPiece.x, kickedPiece.y)) {
+      return kickedPiece; // On renvoie la pièce « kickée »
+    }
+  }
+
+  // 5. Si aucun offset ne fonctionne, on annule la rotation
+  return piece;
 }
 
 // Fonction pour faire tomber rapidement une pièce
